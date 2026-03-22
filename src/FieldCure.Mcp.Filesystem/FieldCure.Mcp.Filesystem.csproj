@@ -14,7 +14,7 @@
     <Authors>Jong Hyun Kim</Authors>
     <Company>Fieldcure Co., Ltd.</Company>
     <Copyright>Copyright (c) 2026 Fieldcure Co., Ltd.</Copyright>
-    <Description>MCP server for secure filesystem operations. Exposes 12 sandboxed file/directory tools via stdio transport.</Description>
+    <Description>MCP server for secure filesystem operations. Exposes 15 sandboxed file/directory tools via stdio transport.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/fieldcure/fieldcure-mcp-filesystem</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fieldcure/fieldcure-mcp-filesystem</RepositoryUrl>

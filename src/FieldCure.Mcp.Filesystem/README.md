@@ -49,11 +49,11 @@ Add to `.vscode/mcp.json`:
 }
 ```
 
-## Tools (12)
+## Tools (15)
 
 | Category | Tools |
 |----------|-------|
-| **File** | `read_file`, `read_multiple_files`, `write_file`, `modify_file`, `copy_file`, `move_file` |
+| **File** | `read_file`, `read_multiple_files`, `read_file_lines`, `write_file`, `append_file`, `modify_file`, `copy_file`, `move_file`, `delete_file` |
 | **Directory** | `list_directory`, `create_directory`, `directory_tree` |
 | **Search & Info** | `search_files`, `search_within_files`, `get_file_info` |
 

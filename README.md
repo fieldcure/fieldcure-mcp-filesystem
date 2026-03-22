@@ -4,7 +4,7 @@ A secure [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server 
 
 ## Features
 
-- **12 filesystem tools** — read, write, search, copy, move, and more
+- **15 filesystem tools** — read, write, append, delete, search, copy, move, and more
 - **Sandboxed access** — all operations restricted to explicitly allowed directories
 - **Security hardened** — path traversal prevention, symlink resolution, NTFS ADS blocking, Windows reserved name rejection
 - **Atomic writes** — temp-file-then-rename pattern prevents data corruption
@@ -96,10 +96,13 @@ Add to `.vscode/mcp.json`:
 |------|-------------|
 | `read_file` | Read file contents (text as UTF-8, binary as base64) |
 | `read_multiple_files` | Read multiple files at once with per-file error handling |
+| `read_file_lines` | Read a specific range of lines (1-based, useful for large files) |
 | `write_file` | Create or overwrite a file with atomic write |
+| `append_file` | Append content to end of file with auto-newline |
 | `modify_file` | Find and replace text (plain text or regex) |
 | `copy_file` | Copy a file or directory recursively |
 | `move_file` | Move or rename a file or directory |
+| `delete_file` | Delete a file or directory (with recursive safety guard) |
 
 ### Directory Operations
 
