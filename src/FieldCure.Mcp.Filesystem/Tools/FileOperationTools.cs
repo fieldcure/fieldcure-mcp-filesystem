@@ -189,7 +189,7 @@ public static class FileOperationTools
         string source,
         [Description("Destination path")]
         string destination,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         var resolvedSource = validator.ValidateAndResolve(source);
         var resolvedDest = validator.ValidateAndResolve(destination);
@@ -220,7 +220,7 @@ public static class FileOperationTools
         string source,
         [Description("New path for the file or directory")]
         string destination,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         var resolvedSource = validator.ValidateAndResolve(source);
         var resolvedDest = validator.ValidateAndResolve(destination);
