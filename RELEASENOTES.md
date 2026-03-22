@@ -1,5 +1,21 @@
 ﻿# Release Notes
 
+## v0.2.0 (2026-03-22)
+
+### New Tools
+
+- **`delete_file`** — Delete a file or directory with recursive safety guard (`Destructive` annotation)
+- **`append_file`** — Append content to end of file with automatic newline separator
+- **`read_file_lines`** — Read a specific line range (1-based) with 10,000-line cap for large files
+
+### Changes
+
+- Tool count: 12 → 15
+- MCP tool annotations added (`ReadOnly`, `Destructive`, `Idempotent`)
+- Test count: 21 → 40 (31 unit + 9 integration)
+
+---
+
 ## v0.1.0 (2026-03-22)
 
 Initial release.
