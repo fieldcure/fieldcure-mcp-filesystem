@@ -1,4 +1,4 @@
-# FieldCure MCP Filesystem Server
+﻿# FieldCure MCP Filesystem Server
 
 A secure [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that exposes local filesystem operations to AI clients. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
 
