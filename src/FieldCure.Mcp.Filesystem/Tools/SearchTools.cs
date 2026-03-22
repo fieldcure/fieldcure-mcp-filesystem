@@ -1,0 +1,185 @@
+using System.ComponentModel;
+using System.Text;
+using FieldCure.Mcp.Filesystem.Security;
+using ModelContextProtocol.Server;
+
+namespace FieldCure.Mcp.Filesystem.Tools;
+
+/// <summary>
+/// Provides file search, content search, and file info operations as MCP tools.
+/// </summary>
+[McpServerToolType]
+public static class SearchTools
+{
+    [McpServerTool, Description(
+        "Search for files by name pattern within a directory tree. " +
+        "Supports glob patterns like '*.cs', '*.txt', 'Program.*'. " +
+        "Returns a list of matching file paths.")]
+    public static Task<string> SearchFiles(
+        IPathValidator validator,
+        [Description("Base directory to search in")]
+        string path,
+        [Description("Glob pattern to match file names (e.g., '*.cs', 'readme*')")]
+        string pattern,
+        CancellationToken cancellationToken)
+    {
+        var resolvedPath = validator.ValidateAndResolve(path);
+
+        if (!Directory.Exists(resolvedPath))
+            throw new DirectoryNotFoundException($"Directory not found: {path}");
+
+        var matches = Directory.EnumerateFiles(resolvedPath, pattern, new EnumerationOptions
+        {
+            RecurseSubdirectories = true,
+            IgnoreInaccessible = true,
+            MatchCasing = MatchCasing.CaseInsensitive,
+        });
+
+        var results = new List<string>();
+        foreach (var match in matches)
+        {
+            // Validate each result to ensure it's within allowed directories
+            // (symlinks inside the search tree might point outside)
+            try
+            {
+                validator.ValidateAndResolve(match);
+                results.Add(Path.GetRelativePath(resolvedPath, match));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Skip files that resolve outside allowed directories
+            }
+        }
+
+        return Task.FromResult(results.Count > 0
+            ? string.Join("\n", results)
+            : "No matching files found.");
+    }
+
+    [McpServerTool, Description(
+        "Search for text content within files in a directory. " +
+        "Returns matching lines with file paths and line numbers. " +
+        "Skips binary files automatically.")]
+    public static async Task<string> SearchWithinFiles(
+        IPathValidator validator,
+        [Description("Base directory to search in")]
+        string path,
+        [Description("Text substring to search for (case-insensitive)")]
+        string substring,
+        [Description("Maximum directory depth to search (default: 10)")]
+        int depth = 10,
+        [Description("Maximum number of results to return (default: 100)")]
+        int maxResults = 100,
+        CancellationToken cancellationToken = default)
+    {
+        var resolvedPath = validator.ValidateAndResolve(path);
+
+        if (!Directory.Exists(resolvedPath))
+            throw new DirectoryNotFoundException($"Directory not found: {path}");
+
+        var sb = new StringBuilder();
+        var resultCount = 0;
+
+        var files = Directory.EnumerateFiles(resolvedPath, "*", new EnumerationOptions
+        {
+            RecurseSubdirectories = true,
+            MaxRecursionDepth = depth,
+            IgnoreInaccessible = true,
+        });
+
+        foreach (var file in files)
+        {
+            if (cancellationToken.IsCancellationRequested || resultCount >= maxResults)
+                break;
+
+            try
+            {
+                validator.ValidateAndResolve(file);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            // Skip binary files
+            if (await Utilities.EncodingDetector.IsBinaryAsync(file, cancellationToken))
+                continue;
+
+            var relativePath = Path.GetRelativePath(resolvedPath, file);
+            var lineNumber = 0;
+
+            await foreach (var line in File.ReadLinesAsync(file, cancellationToken))
+            {
+                lineNumber++;
+
+                if (line.Contains(substring, StringComparison.OrdinalIgnoreCase))
+                {
+                    sb.AppendLine($"{relativePath}:{lineNumber}: {line.TrimStart()}");
+                    resultCount++;
+
+                    if (resultCount >= maxResults)
+                    {
+                        sb.AppendLine($"\n(truncated at {maxResults} results)");
+                        break;
+                    }
+                }
+            }
+        }
+
+        return sb.Length > 0 ? sb.ToString().TrimEnd() : "No matches found.";
+    }
+
+    [McpServerTool, Description(
+        "Get detailed metadata about a file or directory. " +
+        "Returns size, creation date, modification date, attributes, and more.")]
+    public static Task<string> GetFileInfo(
+        IPathValidator validator,
+        [Description("Path to the file or directory")]
+        string path,
+        CancellationToken cancellationToken)
+    {
+        var resolvedPath = validator.ValidateAndResolve(path);
+
+        if (Directory.Exists(resolvedPath))
+        {
+            var dir = new DirectoryInfo(resolvedPath);
+            var childCount = dir.GetFileSystemInfos().Length;
+
+            return Task.FromResult(
+                $"Type: Directory\n" +
+                $"Name: {dir.Name}\n" +
+                $"Full Path: {dir.FullName}\n" +
+                $"Created: {dir.CreationTime:yyyy-MM-dd HH:mm:ss}\n" +
+                $"Modified: {dir.LastWriteTime:yyyy-MM-dd HH:mm:ss}\n" +
+                $"Attributes: {dir.Attributes}\n" +
+                $"Items: {childCount}");
+        }
+
+        if (File.Exists(resolvedPath))
+        {
+            var file = new FileInfo(resolvedPath);
+
+            return Task.FromResult(
+                $"Type: File\n" +
+                $"Name: {file.Name}\n" +
+                $"Full Path: {file.FullName}\n" +
+                $"Size: {file.Length} bytes ({FormatSize(file.Length)})\n" +
+                $"Created: {file.CreationTime:yyyy-MM-dd HH:mm:ss}\n" +
+                $"Modified: {file.LastWriteTime:yyyy-MM-dd HH:mm:ss}\n" +
+                $"Accessed: {file.LastAccessTime:yyyy-MM-dd HH:mm:ss}\n" +
+                $"Attributes: {file.Attributes}\n" +
+                $"Extension: {file.Extension}\n" +
+                $"Read Only: {file.IsReadOnly}");
+        }
+
+        throw new FileNotFoundException($"Path not found: {path}");
+    }
+
+    private static string FormatSize(long bytes) => bytes switch
+    {
+        < 1024 => $"{bytes} B",
+        < 1024 * 1024 => $"{bytes / 1024.0:F1} KB",
+        < 1024 * 1024 * 1024 => $"{bytes / (1024.0 * 1024):F1} MB",
+        _ => $"{bytes / (1024.0 * 1024 * 1024):F1} GB",
+    };
+}

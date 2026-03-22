@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/docs/">
+    <File Path="README.md" />
+    <File Path="RELEASENOTES.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/FieldCure.Mcp.Filesystem/FieldCure.Mcp.Filesystem.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FieldCure.Mcp.Filesystem.Tests/FieldCure.Mcp.Filesystem.Tests.csproj" />
+  </Folder>
+</Solution>
