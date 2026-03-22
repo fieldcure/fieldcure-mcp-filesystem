@@ -9,18 +9,30 @@
     <ImplicitUsings>enable</ImplicitUsings>
 
     <Version>0.1.0</Version>
+    <PackageId>FieldCure.Mcp.Filesystem</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
     <Company>Fieldcure Co., Ltd.</Company>
     <Copyright>Copyright (c) 2026 Fieldcure Co., Ltd.</Copyright>
-    <Description>MCP server for secure filesystem operations</Description>
+    <Description>MCP server for secure filesystem operations. Exposes 12 sandboxed file/directory tools via stdio transport.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/fieldcure/fieldcure-mcp-filesystem</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fieldcure/fieldcure-mcp-filesystem</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <PackageTags>mcp;filesystem;ai;tools</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>fieldcure-mcp-filesystem</ToolCommandName>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="ModelContextProtocol" Version="1.1.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
 </Project>

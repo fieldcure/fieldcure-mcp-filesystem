@@ -1,4 +1,4 @@
-﻿# FieldCure MCP Filesystem Server
+# FieldCure MCP Filesystem Server
 
 A secure [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that exposes local filesystem operations to AI clients. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
 
@@ -11,21 +11,27 @@ A secure [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server 
 - **Binary detection** — automatically returns base64 for binary files, UTF-8 for text
 - **Stdio transport** — standard MCP subprocess model via JSON-RPC over stdin/stdout
 
-## Requirements
+## Installation
 
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
-
-## Quick Start
+### dotnet tool (recommended)
 
 ```bash
-# Clone and build
+dotnet tool install -g FieldCure.Mcp.Filesystem
+```
+
+After installation, the `fieldcure-mcp-filesystem` command is available globally.
+
+### From source
+
+```bash
 git clone https://github.com/fieldcure/fieldcure-mcp-filesystem.git
 cd fieldcure-mcp-filesystem
 dotnet build
-
-# Run with allowed directories
-dotnet run --project src/FieldCure.Mcp.Filesystem -- "C:\Users\me\Documents" "C:\Projects"
 ```
+
+## Requirements
+
+- [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) or later
 
 ## Configuration
 
@@ -37,26 +43,7 @@ Add to `claude_desktop_config.json`:
 {
   "mcpServers": {
     "filesystem": {
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project", "C:\\path\\to\\fieldcure-mcp-filesystem\\src\\FieldCure.Mcp.Filesystem",
-        "--",
-        "C:\\Users\\me\\Documents",
-        "C:\\Projects"
-      ]
-    }
-  }
-}
-```
-
-Or with a published binary:
-
-```json
-{
-  "mcpServers": {
-    "filesystem": {
-      "command": "C:\\path\\to\\fieldcure-mcp-filesystem.exe",
+      "command": "fieldcure-mcp-filesystem",
       "args": [
         "C:\\Users\\me\\Documents",
         "C:\\Projects"
@@ -74,12 +61,27 @@ Add to `.vscode/mcp.json`:
 {
   "servers": {
     "filesystem": {
+      "command": "fieldcure-mcp-filesystem",
+      "args": [
+        "${workspaceFolder}"
+      ]
+    }
+  }
+}
+```
+
+### From source (without dotnet tool)
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
       "command": "dotnet",
       "args": [
         "run",
         "--project", "C:\\path\\to\\fieldcure-mcp-filesystem\\src\\FieldCure.Mcp.Filesystem",
         "--",
-        "${workspaceFolder}"
+        "C:\\Users\\me\\Documents"
       ]
     }
   }
@@ -92,28 +94,28 @@ Add to `.vscode/mcp.json`:
 
 | Tool | Description |
 |------|-------------|
-| `ReadFile` | Read file contents (text as UTF-8, binary as base64) |
-| `ReadMultipleFiles` | Read multiple files at once with per-file error handling |
-| `WriteFile` | Create or overwrite a file with atomic write |
-| `ModifyFile` | Find and replace text (plain text or regex) |
-| `CopyFile` | Copy a file or directory recursively |
-| `MoveFile` | Move or rename a file or directory |
+| `read_file` | Read file contents (text as UTF-8, binary as base64) |
+| `read_multiple_files` | Read multiple files at once with per-file error handling |
+| `write_file` | Create or overwrite a file with atomic write |
+| `modify_file` | Find and replace text (plain text or regex) |
+| `copy_file` | Copy a file or directory recursively |
+| `move_file` | Move or rename a file or directory |
 
 ### Directory Operations
 
 | Tool | Description |
 |------|-------------|
-| `ListDirectory` | List contents with type markers, sizes, and dates |
-| `CreateDirectory` | Create a directory (recursive) |
-| `DirectoryTree` | Hierarchical tree view with configurable depth |
+| `list_directory` | List contents with type markers, sizes, and dates |
+| `create_directory` | Create a directory (recursive) |
+| `directory_tree` | Hierarchical tree view with configurable depth |
 
 ### Search & Info
 
 | Tool | Description |
 |------|-------------|
-| `SearchFiles` | Find files by glob pattern (e.g., `*.cs`, `readme*`) |
-| `SearchWithinFiles` | Search text content across files with line numbers |
-| `GetFileInfo` | File/directory metadata (size, dates, attributes) |
+| `search_files` | Find files by glob pattern (e.g., `*.cs`, `readme*`) |
+| `search_within_files` | Search text content across files with line numbers |
+| `get_file_info` | File/directory metadata (size, dates, attributes) |
 
 ## Security Model
 
@@ -151,8 +153,8 @@ dotnet build
 # Test
 dotnet test
 
-# Publish single file
-dotnet publish src/FieldCure.Mcp.Filesystem -c Release -r win-x64 --self-contained false
+# Pack as dotnet tool
+dotnet pack src/FieldCure.Mcp.Filesystem -c Release
 ```
 
 ## License
