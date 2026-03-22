@@ -242,6 +242,133 @@ public static class FileOperationTools
         return Task.FromResult($"File moved: {source} → {destination}");
     }
 
+    [McpServerTool(Destructive = true, ReadOnly = false, Idempotent = false), Description(
+        "Delete a file or directory. " +
+        "For non-empty directories, set recursive to true. " +
+        "This is a destructive operation and cannot be undone.")]
+    public static Task<string> DeleteFile(
+        IPathValidator validator,
+        [Description("Path to the file or directory to delete")]
+        string path,
+        [Description("Delete directory contents recursively (default: false). Required for non-empty directories.")]
+        bool recursive = false,
+        CancellationToken cancellationToken = default)
+    {
+        var resolvedPath = validator.ValidateAndResolve(path);
+
+        if (Directory.Exists(resolvedPath))
+        {
+            if (!recursive && Directory.EnumerateFileSystemEntries(resolvedPath).Any())
+                throw new IOException($"Directory is not empty: {path}. Set recursive=true to delete.");
+
+            Directory.Delete(resolvedPath, recursive);
+            return Task.FromResult(recursive
+                ? $"Deleted directory (recursive): {path}"
+                : $"Deleted directory: {path}");
+        }
+
+        if (!File.Exists(resolvedPath))
+            throw new FileNotFoundException($"File or directory not found: {path}");
+
+        File.Delete(resolvedPath);
+        return Task.FromResult($"Deleted file: {path}");
+    }
+
+    [McpServerTool(Destructive = false, ReadOnly = false, Idempotent = false), Description(
+        "Append content to the end of a file. " +
+        "Creates the file if it doesn't exist. " +
+        "By default, ensures a newline separates existing and appended content.")]
+    public static async Task<string> AppendFile(
+        IPathValidator validator,
+        [Description("Path to the file to append to")]
+        string path,
+        [Description("Text content to append")]
+        string content,
+        [Description("Prepend a newline if the file doesn't end with one (default: true)")]
+        bool newline = true,
+        CancellationToken cancellationToken = default)
+    {
+        var resolvedPath = validator.ValidateAndResolve(path);
+
+        // Ensure parent directory exists
+        var dir = Path.GetDirectoryName(resolvedPath);
+        if (!string.IsNullOrEmpty(dir))
+            Directory.CreateDirectory(dir);
+
+        // If file exists and newline is requested, check if it ends with a newline
+        if (newline && File.Exists(resolvedPath))
+        {
+            var existing = await File.ReadAllTextAsync(resolvedPath, Encoding.UTF8, cancellationToken);
+            if (existing.Length > 0 && !existing.EndsWith('\n'))
+                content = "\n" + content;
+        }
+
+        await File.AppendAllTextAsync(resolvedPath, content, Encoding.UTF8, cancellationToken);
+
+        return $"Appended {content.Length} characters to {path}";
+    }
+
+    [McpServerTool(ReadOnly = true, Idempotent = true), Description(
+        "Read a specific range of lines from a text file. " +
+        "Uses 1-based line numbering. Returns the requested lines with total line count. " +
+        "Useful for reading portions of large files without loading the entire content.")]
+    public static async Task<string> ReadFileLines(
+        IPathValidator validator,
+        [Description("Path to the file to read")]
+        string path,
+        [Description("First line to read (1-based, inclusive)")]
+        int startLine,
+        [Description("Last line to read (1-based, inclusive). Omit or 0 to read to end of file.")]
+        int endLine = 0,
+        CancellationToken cancellationToken = default)
+    {
+        var resolvedPath = validator.ValidateAndResolve(path);
+
+        if (!File.Exists(resolvedPath))
+            throw new FileNotFoundException($"File not found: {path}");
+
+        if (startLine < 1)
+            throw new ArgumentOutOfRangeException(nameof(startLine), "startLine must be >= 1.");
+
+        if (await EncodingDetector.IsBinaryAsync(resolvedPath, cancellationToken))
+            throw new InvalidOperationException("Cannot read lines from a binary file.");
+
+        var allLines = await File.ReadAllLinesAsync(resolvedPath, Encoding.UTF8, cancellationToken);
+        var totalLines = allLines.Length;
+
+        if (startLine > totalLines)
+            throw new ArgumentOutOfRangeException(nameof(startLine),
+                $"startLine ({startLine}) exceeds total lines ({totalLines}).");
+
+        var effectiveEnd = endLine > 0 ? Math.Min(endLine, totalLines) : totalLines;
+
+        if (effectiveEnd < startLine)
+            throw new ArgumentOutOfRangeException(nameof(endLine),
+                $"endLine ({endLine}) must be >= startLine ({startLine}).");
+
+        // Cap at 10,000 lines
+        const int maxLines = 10_000;
+        var requestedCount = effectiveEnd - startLine + 1;
+        var truncated = false;
+        if (requestedCount > maxLines)
+        {
+            effectiveEnd = startLine + maxLines - 1;
+            truncated = true;
+        }
+
+        var lines = allLines[(startLine - 1)..effectiveEnd];
+        var sb = new StringBuilder();
+        sb.AppendLine($"Lines {startLine}-{effectiveEnd} of {totalLines} total in {path}:");
+
+        for (var i = 0; i < lines.Length; i++)
+            sb.AppendLine($"{startLine + i,6} | {lines[i]}");
+
+        if (truncated)
+            sb.AppendLine($"[WARNING: Output truncated at {maxLines} lines. Request a smaller range.]");
+
+        return sb.ToString();
+    }
+
     private static int CountOccurrences(string text, string pattern)
     {
         var count = 0;

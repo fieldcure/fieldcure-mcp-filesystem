@@ -40,10 +40,10 @@ public class McpIntegrationTests
     }
 
     [TestMethod]
-    public async Task ListTools_ReturnsAll12Tools()
+    public async Task ListTools_ReturnsAll15Tools()
     {
         var tools = await _client.ListToolsAsync();
-        Assert.AreEqual(12, tools.Count);
+        Assert.AreEqual(15, tools.Count);
     }
 
     [TestMethod]
@@ -125,6 +125,57 @@ public class McpIntegrationTests
         var text = GetText(result);
         StringAssert.Contains(text, "test.cs");
         Assert.IsFalse(text.Contains("test.txt"));
+    }
+
+    [TestMethod]
+    public async Task DeleteFile_ViaStdio_DeletesFile()
+    {
+        var filePath = Path.Combine(_testDir, "to-delete.txt");
+        File.WriteAllText(filePath, "delete me");
+
+        var result = await _client.CallToolAsync("delete_file", new Dictionary<string, object?>
+        {
+            ["path"] = filePath,
+        });
+
+        var text = GetText(result);
+        StringAssert.Contains(text, "Deleted file:");
+        Assert.IsFalse(File.Exists(filePath), "File should have been deleted");
+    }
+
+    [TestMethod]
+    public async Task AppendFile_ViaStdio_AppendsContent()
+    {
+        var filePath = Path.Combine(_testDir, "append-test.txt");
+        File.WriteAllText(filePath, "first");
+
+        await _client.CallToolAsync("append_file", new Dictionary<string, object?>
+        {
+            ["path"] = filePath,
+            ["content"] = "second",
+        });
+
+        var content = File.ReadAllText(filePath);
+        Assert.AreEqual("first\nsecond", content);
+    }
+
+    [TestMethod]
+    public async Task ReadFileLines_ViaStdio_ReturnsRange()
+    {
+        var filePath = Path.Combine(_testDir, "lines-test.txt");
+        File.WriteAllLines(filePath, ["A", "B", "C", "D", "E"]);
+
+        var result = await _client.CallToolAsync("read_file_lines", new Dictionary<string, object?>
+        {
+            ["path"] = filePath,
+            ["startLine"] = 2,
+            ["endLine"] = 4,
+        });
+
+        var text = GetText(result);
+        StringAssert.Contains(text, "Lines 2-4 of 5 total");
+        StringAssert.Contains(text, "B");
+        StringAssert.Contains(text, "D");
     }
 
     private static string GetText(CallToolResult result)
