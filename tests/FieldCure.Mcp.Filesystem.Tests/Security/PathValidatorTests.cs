@@ -188,4 +188,97 @@ public class PathValidatorTests
         Assert.ThrowsExactly<ArgumentException>(() =>
             _validator.ValidateAndResolve(reservedPath));
     }
+
+    // UpdateDirectories tests
+
+    [TestMethod]
+    public void UpdateDirectories_ChangesAllowedPaths()
+    {
+        var newRoot = Path.Combine(Path.GetTempPath(), $"mcp-fs-new-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(newRoot);
+
+        try
+        {
+            _validator.UpdateDirectories([newRoot]);
+
+            // Old root should now be denied
+            Assert.ThrowsExactly<UnauthorizedAccessException>(() =>
+                _validator.ValidateAndResolve(Path.Combine(_testRoot, "file.txt")));
+
+            // New root should be allowed
+            var result = _validator.ValidateAndResolve(Path.Combine(newRoot, "file.txt"));
+            Assert.IsTrue(result.StartsWith(newRoot, StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Directory.Delete(newRoot, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public void UpdateDirectories_EmptyList_DeniesAll()
+    {
+        _validator.UpdateDirectories([]);
+
+        Assert.ThrowsExactly<UnauthorizedAccessException>(() =>
+            _validator.ValidateAndResolve(Path.Combine(_testRoot, "file.txt")));
+
+        Assert.AreEqual(0, _validator.AllowedDirectories.Count);
+    }
+
+    [TestMethod]
+    public void UpdateDirectories_ThreadSafety()
+    {
+        var dir1 = Path.Combine(Path.GetTempPath(), $"mcp-fs-t1-{Guid.NewGuid():N}");
+        var dir2 = Path.Combine(Path.GetTempPath(), $"mcp-fs-t2-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir1);
+        Directory.CreateDirectory(dir2);
+
+        try
+        {
+            var exceptions = new System.Collections.Concurrent.ConcurrentBag<Exception>();
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+            var writers = Task.Run(() =>
+            {
+                while (!cts.IsCancellationRequested)
+                {
+                    try
+                    {
+                        _validator.UpdateDirectories([dir1]);
+                        _validator.UpdateDirectories([dir2]);
+                    }
+                    catch (Exception ex)
+                    {
+                        exceptions.Add(ex);
+                    }
+                }
+            });
+
+            var readers = Task.Run(() =>
+            {
+                while (!cts.IsCancellationRequested)
+                {
+                    try
+                    {
+                        _ = _validator.AllowedDirectories;
+                    }
+                    catch (Exception ex)
+                    {
+                        exceptions.Add(ex);
+                    }
+                }
+            });
+
+            Task.WaitAll(writers, readers);
+
+            Assert.AreEqual(0, exceptions.Count,
+                $"Thread safety violation: {string.Join("; ", exceptions.Select(e => e.Message))}");
+        }
+        finally
+        {
+            Directory.Delete(dir1, recursive: true);
+            Directory.Delete(dir2, recursive: true);
+        }
+    }
 }

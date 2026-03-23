@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 
 namespace FieldCure.Mcp.Filesystem.Security;
 
@@ -20,7 +19,8 @@ public sealed partial class PathValidator : IPathValidator
         "LPT0", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
     };
 
-    private readonly List<string> _allowedDirectories;
+    private readonly ReaderWriterLockSlim _lock = new();
+    private List<string> _allowedDirectories;
 
     public PathValidator(IEnumerable<string> allowedDirectories)
     {
@@ -28,7 +28,39 @@ public sealed partial class PathValidator : IPathValidator
             .Select(d => NormalizePath(Path.GetFullPath(d)))];
     }
 
-    public IReadOnlyList<string> AllowedDirectories => _allowedDirectories;
+    public IReadOnlyList<string> AllowedDirectories
+    {
+        get
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                return _allowedDirectories;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    public void UpdateDirectories(IEnumerable<string> directories)
+    {
+        var newDirs = directories
+            .Select(d => NormalizePath(Path.GetFullPath(d)))
+            .ToList();
+
+        _lock.EnterWriteLock();
+        try
+        {
+            _allowedDirectories = newDirs;
+        }
+        finally
+        {
+            _lock.ExitWriteLock();
+        }
+    }
 
     public string ValidateAndResolve(string path)
     {
@@ -56,15 +88,26 @@ public sealed partial class PathValidator : IPathValidator
             resolvedPath = ResolveNonExistentPath(fullPath);
         }
 
-        if (!IsPathUnderAllowed(resolvedPath))
+        _lock.EnterReadLock();
+        try
         {
-            throw new UnauthorizedAccessException(
-                $"Access denied: path '{path}' resolves to '{resolvedPath}' which is outside all allowed directories.");
+            if (!IsPathUnderAllowed(resolvedPath))
+            {
+                throw new UnauthorizedAccessException(
+                    $"Access denied: path '{path}' resolves to '{resolvedPath}' which is outside all allowed directories.");
+            }
+        }
+        finally
+        {
+            _lock.ExitReadLock();
         }
 
         return resolvedPath;
     }
 
+    /// <summary>
+    /// Validates Windows-specific path restrictions (NTFS ADS and reserved names).
+    /// </summary>
     private static void ValidateWindowsSpecific(string path)
     {
         // Block NTFS Alternate Data Streams (e.g., file.txt:hidden)
@@ -88,6 +131,10 @@ public sealed partial class PathValidator : IPathValidator
         }
     }
 
+    /// <summary>
+    /// Checks whether the candidate path falls under any allowed directory.
+    /// Must be called while holding the read lock.
+    /// </summary>
     private bool IsPathUnderAllowed(string candidatePath)
     {
         foreach (var allowed in _allowedDirectories)
@@ -109,9 +156,11 @@ public sealed partial class PathValidator : IPathValidator
         return false;
     }
 
+    /// <summary>
+    /// Resolves symlinks to their final target using .NET 8+ APIs.
+    /// </summary>
     private static string ResolveSymlinks(string path)
     {
-        // On .NET 8+, use ResolveLinkTarget for symlink resolution
         try
         {
             var linkTarget = File.ResolveLinkTarget(path, returnFinalTarget: true);
@@ -135,8 +184,8 @@ public sealed partial class PathValidator : IPathValidator
     }
 
     /// <summary>
-    /// For non-existent paths, walk up to the nearest existing ancestor,
-    /// resolve any symlinks on that ancestor, then reconstruct the full path.
+    /// For non-existent paths, walks up to the nearest existing ancestor,
+    /// resolves any symlinks on that ancestor, then reconstructs the full path.
     /// </summary>
     private static string ResolveNonExistentPath(string fullPath)
     {
@@ -163,6 +212,10 @@ public sealed partial class PathValidator : IPathValidator
         return fullPath;
     }
 
+    /// <summary>
+    /// Normalizes a path by unifying separators, removing trailing separators,
+    /// and capitalizing Windows drive letters.
+    /// </summary>
     private static string NormalizePath(string path)
     {
         // Normalize directory separators

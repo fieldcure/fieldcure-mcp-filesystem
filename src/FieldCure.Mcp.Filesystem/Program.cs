@@ -2,7 +2,7 @@ using FieldCure.Mcp.Filesystem.Security;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-
+using ModelContextProtocol.Protocol;
 if (args.Length == 0)
 {
     Console.Error.WriteLine("Usage: fieldcure-mcp-filesystem <allowed-directory> [additional-directories...]");
@@ -47,11 +47,32 @@ builder.Services
         options.ServerInfo = new()
         {
             Name = "fieldcure-mcp-filesystem",
-            Version = "0.1.0",
+            Version = "0.3.0",
         };
     })
     .WithStdioServerTransport()
     .WithToolsFromAssembly();
 
-await builder.Build().RunAsync();
+var app = builder.Build();
+
+// Register roots/list_changed handler for runtime directory updates.
+// When the client sends this notification, the server requests the new roots
+// and replaces the allowed directories entirely (override, not merge).
+var server = app.Services.GetRequiredService<ModelContextProtocol.Server.McpServer>();
+var pathValidator = app.Services.GetRequiredService<IPathValidator>();
+
+server.RegisterNotificationHandler(
+    NotificationMethods.RootsListChangedNotification,
+    async (notification, cancellationToken) =>
+    {
+        var rootsResult = await server.RequestRootsAsync(new(), cancellationToken);
+
+        var folders = rootsResult.Roots
+            .Select(r => new Uri(r.Uri).LocalPath)
+            .ToList();
+
+        pathValidator.UpdateDirectories(folders);
+    });
+
+await app.RunAsync();
 return 0;

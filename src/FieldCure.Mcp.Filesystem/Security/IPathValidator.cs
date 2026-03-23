@@ -21,4 +21,10 @@ public interface IPathValidator
     /// Returns the list of currently allowed directories.
     /// </summary>
     IReadOnlyList<string> AllowedDirectories { get; }
+
+    /// <summary>
+    /// Updates the allowed directories at runtime.
+    /// Called when the client sends a roots/list_changed notification.
+    /// </summary>
+    void UpdateDirectories(IEnumerable<string> directories);
 }
