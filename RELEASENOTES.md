@@ -1,5 +1,23 @@
 ﻿# Release Notes
 
+## v0.3.0 (2026-03-23)
+
+### New Feature
+
+- **MCP roots protocol support** — clients can change allowed directories at runtime via `notifications/roots/list_changed`, without restarting the server process
+  - `IPathValidator.UpdateDirectories()` for thread-safe directory replacement
+  - `ReaderWriterLockSlim` protects concurrent read/write access
+  - CLI args serve as initial value; roots override them entirely
+  - Empty roots list denies all file access (by design)
+
+### Changes
+
+- Package icon added (Logo.png)
+- Package description updated to mention roots support
+- Test count: 40 → 43 (unit) + 5 (roots integration)
+
+---
+
 ## v0.2.0 (2026-03-22)
 
 ### New Tools

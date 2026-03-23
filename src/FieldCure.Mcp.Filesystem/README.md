@@ -1,6 +1,6 @@
 # FieldCure.Mcp.Filesystem
 
-**Secure MCP server for local filesystem operations** — read, write, search, copy, move files and directories with path sandboxing.
+**Secure MCP server for local filesystem operations** — read, write, search, copy, move files and directories with path sandboxing. Supports MCP roots protocol for runtime directory changes.
 
 [![NuGet](https://img.shields.io/nuget/v/FieldCure.Mcp.Filesystem)](https://www.nuget.org/packages/FieldCure.Mcp.Filesystem)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/fieldcure/fieldcure-mcp-filesystem/blob/main/LICENSE)
@@ -57,11 +57,15 @@ Add to `.vscode/mcp.json`:
 | **Directory** | `list_directory`, `create_directory`, `directory_tree` |
 | **Search & Info** | `search_files`, `search_within_files`, `get_file_info` |
 
+## MCP Roots Protocol
+
+Supports runtime directory changes via the [MCP roots protocol](https://modelcontextprotocol.info/specification/draft/client/roots/). Clients can send `notifications/roots/list_changed` to switch allowed directories without restarting the server. CLI args serve as the initial value; roots override them entirely.
+
 ## Security
 
 All paths are validated through a sandbox before any filesystem operation:
 
-- **Allowed directories** — CLI args define the sandbox boundary
+- **Allowed directories** — CLI args define the initial sandbox boundary (overridable via roots)
 - **Path traversal prevention** — `..` resolved and validated
 - **Symlink resolution** — final target must be within allowed directories
 - **NTFS ADS blocking** — alternate data stream paths rejected

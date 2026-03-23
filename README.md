@@ -6,6 +6,7 @@ A secure [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server 
 
 - **15 filesystem tools** — read, write, append, delete, search, copy, move, and more
 - **Sandboxed access** — all operations restricted to explicitly allowed directories
+- **MCP roots protocol** — clients can change allowed directories at runtime without restarting the server
 - **Security hardened** — path traversal prevention, symlink resolution, NTFS ADS blocking, Windows reserved name rejection
 - **Atomic writes** — temp-file-then-rename pattern prevents data corruption
 - **Binary detection** — automatically returns base64 for binary files, UTF-8 for text
@@ -120,16 +121,28 @@ Add to `.vscode/mcp.json`:
 | `search_within_files` | Search text content across files with line numbers |
 | `get_file_info` | File/directory metadata (size, dates, attributes) |
 
+## MCP Roots Protocol
+
+The server supports the [MCP roots protocol](https://modelcontextprotocol.info/specification/draft/client/roots/) for runtime directory changes. When a client sends a `notifications/roots/list_changed` notification:
+
+1. Server calls `roots/list` to get the new directory list from the client
+2. Allowed directories are **replaced entirely** (override, not merge)
+3. CLI args serve as the initial value; roots override them once received
+4. Empty roots list = all file access denied
+
+This enables multi-tab clients to switch project folders without restarting the server process.
+
 ## Security Model
 
 All paths are validated through `IPathValidator` before any filesystem operation:
 
-1. **Allowed directories** — CLI args define the sandbox boundary
+1. **Allowed directories** — CLI args define the initial sandbox boundary (overridable via roots)
 2. **Path normalization** — `.` and `..` resolved via `Path.GetFullPath()`
 3. **Symlink resolution** — final target must be within allowed directories
 4. **Directory-separator-aware prefix matching** — prevents `/allowed` from matching `/allowed-secret`
 5. **NTFS ADS blocking** — alternate data stream paths rejected
 6. **Windows reserved names** — `CON`, `PRN`, `AUX`, `NUL`, etc. rejected
+7. **Thread-safe directory updates** — `ReaderWriterLockSlim` protects concurrent access during roots changes
 
 ## Project Structure
 
