@@ -21,6 +21,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>mcp;filesystem;ai;tools</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>Logo.png</PackageIcon>
 
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>fieldcure-mcp-filesystem</ToolCommandName>
@@ -33,6 +34,7 @@
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />
+    <None Include="Logo.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
 </Project>
