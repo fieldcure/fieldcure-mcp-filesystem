@@ -1,5 +1,17 @@
 ﻿# Release Notes
 
+## v0.4.0 (2026-03-24)
+
+### New Feature
+
+- **DocumentParsers integration** — `read_file` now extracts text from document formats (hwpx, docx) via `FieldCure.DocumentParsers`, checked before binary detection
+
+### Changes
+
+- Added `FieldCure.DocumentParsers` 0.1.x package dependency
+
+---
+
 ## v0.3.0 (2026-03-23)
 
 ### New Feature

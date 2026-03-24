@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <PackageId>FieldCure.Mcp.Filesystem</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
