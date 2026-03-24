@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using FieldCure.DocumentParsers;
 using FieldCure.Mcp.Filesystem.Security;
 using FieldCure.Mcp.Filesystem.Utilities;
 using ModelContextProtocol.Server;
@@ -29,6 +30,15 @@ public static class FileOperationTools
 
         if (!File.Exists(resolvedPath))
             throw new FileNotFoundException($"File not found: {path}");
+
+        // Use DocumentParsers for supported document formats (hwpx, docx, etc.)
+        var ext = Path.GetExtension(resolvedPath);
+        var parser = DocumentParserFactory.GetParser(ext);
+        if (parser is not null)
+        {
+            var bytes = await File.ReadAllBytesAsync(resolvedPath, cancellationToken);
+            return parser.ExtractText(bytes);
+        }
 
         if (await EncodingDetector.IsBinaryAsync(resolvedPath, cancellationToken))
         {

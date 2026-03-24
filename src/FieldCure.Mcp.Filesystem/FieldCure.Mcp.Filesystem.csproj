@@ -30,6 +30,7 @@
   <ItemGroup>
     <PackageReference Include="ModelContextProtocol" Version="1.1.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.*" />
+    <PackageReference Include="FieldCure.DocumentParsers" Version="0.1.*" />
   </ItemGroup>
 
   <ItemGroup>
