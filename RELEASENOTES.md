@@ -1,5 +1,13 @@
 ﻿# Release Notes
 
+## v0.5.0 (2026-03-27)
+
+### Changes
+
+- **`FieldCure.DocumentParsers` 0.3.x** — picks up math equation extraction (`[math: LaTeX]`) for DOCX and HWPX documents; equations are now included in `read_file` text output
+
+---
+
 ## v0.4.0 (2026-03-24)
 
 ### New Feature

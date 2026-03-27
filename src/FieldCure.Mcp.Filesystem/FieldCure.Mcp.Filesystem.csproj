@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>0.4.0</Version>
+    <Version>0.5.0</Version>
     <PackageId>FieldCure.Mcp.Filesystem</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
@@ -30,7 +30,7 @@
   <ItemGroup>
     <PackageReference Include="ModelContextProtocol" Version="1.1.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.*" />
-    <PackageReference Include="FieldCure.DocumentParsers" Version="0.1.*" />
+    <PackageReference Include="FieldCure.DocumentParsers" Version="0.3.*" />
   </ItemGroup>
 
   <ItemGroup>
