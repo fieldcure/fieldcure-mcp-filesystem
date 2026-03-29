@@ -2,9 +2,6 @@
 
 **Secure MCP server for local filesystem operations** — read, write, search, copy, move files and directories with path sandboxing. Supports MCP roots protocol for runtime directory changes.
 
-[![NuGet](https://img.shields.io/nuget/v/FieldCure.Mcp.Filesystem)](https://www.nuget.org/packages/FieldCure.Mcp.Filesystem)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/fieldcure/fieldcure-mcp-filesystem/blob/main/LICENSE)
-
 ## Install
 
 ```bash

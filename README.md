@@ -1,5 +1,8 @@
 # FieldCure MCP Filesystem Server
 
+[![NuGet](https://img.shields.io/nuget/v/FieldCure.Mcp.Filesystem)](https://www.nuget.org/packages/FieldCure.Mcp.Filesystem)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/fieldcure/fieldcure-mcp-filesystem/blob/main/LICENSE)
+
 A secure [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that exposes local filesystem operations to AI clients. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
 
 ## Features
