@@ -18,7 +18,13 @@ public class McpIntegrationTests
         var transport = new StdioClientTransport(new StdioClientTransportOptions
         {
             Command = "dotnet",
-            Arguments = ["run", "--no-build", "--project",
+            Arguments = ["run", "--no-build", "-c",
+#if DEBUG
+                "Debug",
+#else
+                "Release",
+#endif
+                "--project",
                 Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..",
                     "src", "FieldCure.Mcp.Filesystem")),
                 "--", _testDir],
