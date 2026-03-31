@@ -176,6 +176,20 @@ dotnet test
 dotnet pack src/FieldCure.Mcp.Filesystem -c Release
 ```
 
+## Limitations
+
+| Supported | Not Yet Supported |
+|-----------|-------------------|
+| Text file read/write (UTF-8) | Non-UTF-8 encoding auto-detection |
+| Binary file detection + base64 | Streaming for very large files (>100 MB) |
+| Atomic writes (temp + rename) | File watching / change notifications |
+| Glob pattern search | Full-text indexing |
+| Regex find-and-replace | Multi-file transactional writes |
+| Symlink resolution | Cross-platform symlink creation |
+| NTFS ADS blocking | Linux extended attributes |
+| MCP roots protocol | HTTP transport (stdio only) |
+| Document text extraction (DOCX, HWPX, XLSX, PPTX via DocumentParsers) | OCR for scanned documents |
+
 ## License
 
 [MIT](LICENSE)
