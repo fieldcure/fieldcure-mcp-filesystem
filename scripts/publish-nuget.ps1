@@ -42,19 +42,20 @@ if (Test-Path $OutputDir) {
 }
 New-Item $OutputDir -ItemType Directory | Out-Null
 
-# --- 1. Pack ---
-Write-Host "`n=== Packing ===" -ForegroundColor Cyan
+# --- 1. Clean & Pack ---
+Write-Host "`n=== Cleaning ===" -ForegroundColor Cyan
+foreach ($proj in $Projects) {
+    $projPath = Join-Path $RepoRoot $proj
+    dotnet clean $projPath -c Release --nologo -v q
+}
+
+Write-Host "`n=== Packing (clean build) ===" -ForegroundColor Cyan
 foreach ($proj in $Projects) {
     $projPath = Join-Path $RepoRoot $proj
     Write-Host "  Packing $proj ..."
-    dotnet pack $projPath -c Release -o $OutputDir --no-build 2>&1 | Out-Null
+    dotnet pack $projPath -c Release -o $OutputDir
     if ($LASTEXITCODE -ne 0) {
-        # Retry with build
-        Write-Host "  Building and packing $proj ..."
-        dotnet pack $projPath -c Release -o $OutputDir
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "Pack failed for $proj"
-        }
+        Write-Error "Pack failed for $proj"
     }
 }
 
