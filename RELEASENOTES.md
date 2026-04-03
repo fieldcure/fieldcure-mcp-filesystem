@@ -1,5 +1,13 @@
 ﻿# Release Notes
 
+## v0.5.1 (2026-04-03)
+
+### Changed
+
+- `ModelContextProtocol` 1.1.0 → 1.2.0
+
+---
+
 ## v0.5.0 (2026-03-27)
 
 ### Changes
@@ -78,6 +86,6 @@ Initial release.
 ### Tech Stack
 
 - .NET 8.0
-- [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk) v1.1.0
+- [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk) v1.2.0
 - Microsoft.Extensions.Hosting
 - MSTest (21 tests: 15 unit + 6 integration)
