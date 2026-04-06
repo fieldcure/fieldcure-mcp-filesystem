@@ -1,5 +1,25 @@
 ﻿# Release Notes
 
+## v1.0.0 (2026-04-06)
+
+### Stable Release
+
+First stable release. API surface finalized — tool signatures, parameter names, and behavior are now covered by semver.
+
+### Changed
+
+- **Tool annotations completed** — all 15 tools now declare `ReadOnly`, `Destructive`, and `Idempotent` explicitly
+- `DeleteFile` annotation fix: `Idempotent` false → true (deleting non-existent path is a no-op)
+- `FieldCure.DocumentParsers` 1.x — DOCX, HWPX, XLSX, PPTX, PDF text extraction via `read_file`
+
+### Improved
+
+- Extracted duplicate `FormatSize` into shared `Utilities/FileSize` utility
+- Added XML doc comments to all private methods
+- Removed unused `System.Security.Cryptography` using
+
+---
+
 ## v0.5.1 (2026-04-03)
 
 ### Changed
