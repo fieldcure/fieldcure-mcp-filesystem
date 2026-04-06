@@ -92,6 +92,18 @@ Add to `.vscode/mcp.json`:
 }
 ```
 
+### AssistStudio
+
+Settings > MCP Servers > **Add Server**:
+
+| Field | Value |
+|-------|-------|
+| **Name** | `Filesystem` |
+| **Command** | `fieldcure-mcp-filesystem` |
+| **Arguments** | Allowed directory paths (e.g., `C:\Users\me\Documents`) |
+| **Environment** | *(none)* |
+| **Description** | *(auto-filled on first connection)* |
+
 ## Tools
 
 ### File Operations
@@ -189,6 +201,36 @@ dotnet pack src/FieldCure.Mcp.Filesystem -c Release
 | NTFS ADS blocking | Linux extended attributes |
 | MCP roots protocol | HTTP transport (stdio only) |
 | Document text extraction (DOCX, HWPX, XLSX, PPTX via DocumentParsers) | OCR for scanned documents |
+
+## See Also — AssistStudio Ecosystem
+
+### MCP Servers
+
+| Package | Description |
+|---------|-------------|
+| [FieldCure.Mcp.Essentials](https://www.nuget.org/packages/FieldCure.Mcp.Essentials) | HTTP, web search (Bing/Serper/Tavily), shell, JavaScript, file I/O, persistent memory |
+| [FieldCure.Mcp.Outbox](https://www.nuget.org/packages/FieldCure.Mcp.Outbox) | Multi-channel messaging — Slack, Telegram, Email (SMTP/Graph), KakaoTalk |
+| **[FieldCure.Mcp.Filesystem](https://www.nuget.org/packages/FieldCure.Mcp.Filesystem)** | **Sandboxed file/directory operations with built-in document parsing (DOCX, HWPX, XLSX, PDF)** |
+| [FieldCure.Mcp.Rag](https://www.nuget.org/packages/FieldCure.Mcp.Rag) | Document search — hybrid BM25 + vector retrieval, multi-KB, incremental indexing |
+| [FieldCure.Mcp.PublicData.Kr](https://www.nuget.org/packages/FieldCure.Mcp.PublicData.Kr) | Korean public data gateway — data.go.kr (80,000+ APIs) |
+| [FieldCure.AssistStudio.Runner](https://www.nuget.org/packages/FieldCure.AssistStudio.Runner) | Headless LLM task runner with scheduling via Windows Task Scheduler |
+
+### Libraries
+
+| Package | Description |
+|---------|-------------|
+| [FieldCure.Ai.Providers](https://www.nuget.org/packages/FieldCure.Ai.Providers) | Multi-provider AI client — Claude, OpenAI, Gemini, Ollama, Groq with streaming and tool use |
+| [FieldCure.Ai.Execution](https://www.nuget.org/packages/FieldCure.Ai.Execution) | Agent loop and sub-agent execution engine for autonomous tool-use workflows |
+| [FieldCure.AssistStudio.Core](https://www.nuget.org/packages/FieldCure.AssistStudio.Core) | MCP server management, tool orchestration, and conversation persistence |
+| [FieldCure.AssistStudio.Controls.WinUI](https://www.nuget.org/packages/FieldCure.AssistStudio.Controls.WinUI) | WinUI 3 chat UI controls — WebView2 rendering, streaming, conversation branching |
+| [FieldCure.DocumentParsers](https://www.nuget.org/packages/FieldCure.DocumentParsers) | Document text extraction — DOCX, HWPX, XLSX, PPTX with math-to-LaTeX |
+| [FieldCure.DocumentParsers.Pdf](https://www.nuget.org/packages/FieldCure.DocumentParsers.Pdf) | PDF text extraction add-on for DocumentParsers |
+
+### App
+
+| Package | Description |
+|---------|-------------|
+| [FieldCure.AssistStudio](https://github.com/fieldcure/fieldcure-assiststudio) | Multi-provider AI workspace for Windows (WinUI 3) |
 
 ## License
 

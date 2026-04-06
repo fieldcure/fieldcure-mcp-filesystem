@@ -19,10 +19,11 @@
     <PackageProjectUrl>https://github.com/fieldcure/fieldcure-mcp-filesystem</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fieldcure/fieldcure-mcp-filesystem</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>mcp;filesystem;ai;tools;roots</PackageTags>
+    <PackageTags>mcp;mcp-server;ai;dotnet;filesystem;file-management;document-parser</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
 
+    <PackageType>McpServer</PackageType>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>fieldcure-mcp-filesystem</ToolCommandName>
   </PropertyGroup>
@@ -36,6 +37,7 @@
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />
     <None Include="Logo.png" Pack="true" PackagePath="" />
+    <None Include=".mcp/server.json" Pack="true" PackagePath=".mcp/" />
   </ItemGroup>
 
 </Project>
