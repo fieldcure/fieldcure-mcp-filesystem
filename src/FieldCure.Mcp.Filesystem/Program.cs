@@ -48,6 +48,8 @@ builder.Services
         options.ServerInfo = new()
         {
             Name = "fieldcure-mcp-filesystem",
+            Title = "FieldCure Filesystem",
+            Description = "Sandboxed file/directory operations with built-in document parsing",
             Version = typeof(Program).Assembly
                 .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()
                 ?.InformationalVersion ?? "0.0.0",
