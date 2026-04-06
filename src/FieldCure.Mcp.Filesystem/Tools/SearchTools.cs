@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Text;
 using FieldCure.Mcp.Filesystem.Security;
+using FieldCure.Mcp.Filesystem.Utilities;
 using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Filesystem.Tools;
@@ -11,7 +12,7 @@ namespace FieldCure.Mcp.Filesystem.Tools;
 [McpServerToolType]
 public static class SearchTools
 {
-    [McpServerTool, Description(
+    [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "Search for files by name pattern within a directory tree. " +
         "Supports glob patterns like '*.cs', '*.txt', 'Program.*'. " +
         "Returns a list of matching file paths.")]
@@ -56,7 +57,7 @@ public static class SearchTools
             : "No matching files found.");
     }
 
-    [McpServerTool, Description(
+    [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "Search for text content within files in a directory. " +
         "Returns matching lines with file paths and line numbers. " +
         "Skips binary files automatically.")]
@@ -129,7 +130,7 @@ public static class SearchTools
         return sb.Length > 0 ? sb.ToString().TrimEnd() : "No matches found.";
     }
 
-    [McpServerTool, Description(
+    [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "Get detailed metadata about a file or directory. " +
         "Returns size, creation date, modification date, attributes, and more.")]
     public static Task<string> GetFileInfo(
@@ -163,7 +164,7 @@ public static class SearchTools
                 $"Type: File\n" +
                 $"Name: {file.Name}\n" +
                 $"Full Path: {file.FullName}\n" +
-                $"Size: {file.Length} bytes ({FormatSize(file.Length)})\n" +
+                $"Size: {file.Length} bytes ({FileSize.Format(file.Length)})\n" +
                 $"Created: {file.CreationTime:yyyy-MM-dd HH:mm:ss}\n" +
                 $"Modified: {file.LastWriteTime:yyyy-MM-dd HH:mm:ss}\n" +
                 $"Accessed: {file.LastAccessTime:yyyy-MM-dd HH:mm:ss}\n" +
@@ -175,11 +176,4 @@ public static class SearchTools
         throw new FileNotFoundException($"Path not found: {path}");
     }
 
-    private static string FormatSize(long bytes) => bytes switch
-    {
-        < 1024 => $"{bytes} B",
-        < 1024 * 1024 => $"{bytes / 1024.0:F1} KB",
-        < 1024 * 1024 * 1024 => $"{bytes / (1024.0 * 1024):F1} MB",
-        _ => $"{bytes / (1024.0 * 1024 * 1024):F1} GB",
-    };
 }

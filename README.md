@@ -92,18 +92,6 @@ Add to `.vscode/mcp.json`:
 }
 ```
 
-### AssistStudio
-
-Settings > MCP Servers > **Add Server**:
-
-| Field | Value |
-|-------|-------|
-| **Name** | `Filesystem` |
-| **Command** | `fieldcure-mcp-filesystem` |
-| **Arguments** | Allowed directory paths (e.g., `C:\Users\me\Documents`) |
-| **Environment** | *(none)* |
-| **Description** | *(auto-filled on first connection)* |
-
 ## Tools
 
 ### File Operations
@@ -168,7 +156,7 @@ src/FieldCure.Mcp.Filesystem/
 │   ├── IPathValidator.cs       # Path validation interface
 │   └── PathValidator.cs        # Sandbox implementation
 ├── Tools/
-│   ├── FileOperationTools.cs   # 6 file tools
+│   ├── FileOperationTools.cs   # 9 file tools
 │   ├── DirectoryTools.cs       # 3 directory tools
 │   └── SearchTools.cs          # 3 search/info tools
 └── Utilities/

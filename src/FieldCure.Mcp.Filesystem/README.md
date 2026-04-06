@@ -68,18 +68,6 @@ All paths are validated through a sandbox before any filesystem operation:
 - **NTFS ADS blocking** — alternate data stream paths rejected
 - **Windows reserved names** — `CON`, `PRN`, `AUX`, `NUL`, etc. rejected
 
-### AssistStudio
-
-Settings > MCP Servers > **Add Server**:
-
-| Field | Value |
-|-------|-------|
-| **Name** | `Filesystem` |
-| **Command** | `fieldcure-mcp-filesystem` |
-| **Arguments** | Allowed directory paths (e.g., `C:\Users\me\Documents`) |
-| **Environment** | *(none)* |
-| **Description** | *(auto-filled on first connection)* |
-
 ## Requirements
 
 - [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) or later

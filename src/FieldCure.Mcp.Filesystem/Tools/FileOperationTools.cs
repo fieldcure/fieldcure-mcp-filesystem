@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using FieldCure.DocumentParsers;
@@ -16,7 +15,7 @@ namespace FieldCure.Mcp.Filesystem.Tools;
 [McpServerToolType]
 public static class FileOperationTools
 {
-    [McpServerTool, Description(
+    [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "Read the complete contents of a file. " +
         "Returns text content directly for text files, or base64-encoded string for binary files. " +
         "Use this to examine existing files.")]
@@ -49,7 +48,7 @@ public static class FileOperationTools
         return await File.ReadAllTextAsync(resolvedPath, Encoding.UTF8, cancellationToken);
     }
 
-    [McpServerTool, Description(
+    [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "Read multiple files simultaneously. " +
         "Returns the contents of each file with a header separator. " +
         "Failed reads are reported inline without stopping other files.")]
@@ -76,7 +75,7 @@ public static class FileOperationTools
         return string.Join("\n\n", results);
     }
 
-    [McpServerTool, Description(
+    [McpServerTool(Destructive = true, ReadOnly = false, Idempotent = true), Description(
         "Create a new file or overwrite an existing file with the given content. " +
         "Parent directories are created automatically if they don't exist. " +
         "Uses atomic write (temp file + rename) for safety.")]
@@ -112,7 +111,7 @@ public static class FileOperationTools
         return $"Successfully wrote {content.Length} characters to {path}";
     }
 
-    [McpServerTool, Description(
+    [McpServerTool(Destructive = true, ReadOnly = false, Idempotent = true), Description(
         "Search and replace text within a file. " +
         "Supports plain text and regular expression patterns. " +
         "Returns the number of replacements made.")]
@@ -190,7 +189,7 @@ public static class FileOperationTools
         return $"Made {count} replacement(s) in {path}";
     }
 
-    [McpServerTool, Description(
+    [McpServerTool(Destructive = false, ReadOnly = false, Idempotent = true), Description(
         "Copy a file or directory to a new location. " +
         "For directories, copies recursively including all contents.")]
     public static Task<string> CopyFile(
@@ -221,7 +220,7 @@ public static class FileOperationTools
         return Task.FromResult($"File copied: {source} → {destination}");
     }
 
-    [McpServerTool, Description(
+    [McpServerTool(Destructive = true, ReadOnly = false, Idempotent = false), Description(
         "Move or rename a file or directory. " +
         "Both source and destination must be within allowed directories.")]
     public static Task<string> MoveFile(
@@ -252,7 +251,7 @@ public static class FileOperationTools
         return Task.FromResult($"File moved: {source} → {destination}");
     }
 
-    [McpServerTool(Destructive = true, ReadOnly = false, Idempotent = false), Description(
+    [McpServerTool(Destructive = true, ReadOnly = false, Idempotent = true), Description(
         "Delete a file or directory. " +
         "For non-empty directories, set recursive to true. " +
         "This is a destructive operation and cannot be undone.")]
@@ -318,7 +317,7 @@ public static class FileOperationTools
         return $"Appended {content.Length} characters to {path}";
     }
 
-    [McpServerTool(ReadOnly = true, Idempotent = true), Description(
+    [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "Read a specific range of lines from a text file. " +
         "Uses 1-based line numbering. Returns the requested lines with total line count. " +
         "Useful for reading portions of large files without loading the entire content.")]
@@ -379,6 +378,9 @@ public static class FileOperationTools
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Counts the number of non-overlapping occurrences of <paramref name="pattern"/> in <paramref name="text"/>.
+    /// </summary>
     private static int CountOccurrences(string text, string pattern)
     {
         var count = 0;
@@ -391,6 +393,9 @@ public static class FileOperationTools
         return count;
     }
 
+    /// <summary>
+    /// Recursively copies all files and subdirectories from <paramref name="sourceDir"/> to <paramref name="destDir"/>.
+    /// </summary>
     private static void CopyDirectoryRecursive(string sourceDir, string destDir)
     {
         Directory.CreateDirectory(destDir);

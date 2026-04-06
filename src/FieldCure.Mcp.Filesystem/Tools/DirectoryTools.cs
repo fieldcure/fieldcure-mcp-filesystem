@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Text;
 using FieldCure.Mcp.Filesystem.Security;
+using FieldCure.Mcp.Filesystem.Utilities;
 using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Filesystem.Tools;
@@ -11,7 +12,7 @@ namespace FieldCure.Mcp.Filesystem.Tools;
 [McpServerToolType]
 public static class DirectoryTools
 {
-    [McpServerTool, Description(
+    [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "List the contents of a directory. " +
         "Returns entries with [FILE] or [DIR] markers, size, and last modified date.")]
     public static Task<string> ListDirectory(
@@ -36,14 +37,14 @@ public static class DirectoryTools
             }
             else if (entry is FileInfo file)
             {
-                sb.AppendLine($"[FILE] {file.Name,-40} {FormatSize(file.Length),10} {file.LastWriteTime:yyyy-MM-dd HH:mm}");
+                sb.AppendLine($"[FILE] {file.Name,-40} {FileSize.Format(file.Length),10} {file.LastWriteTime:yyyy-MM-dd HH:mm}");
             }
         }
 
         return Task.FromResult(sb.Length > 0 ? sb.ToString().TrimEnd() : "(empty directory)");
     }
 
-    [McpServerTool, Description(
+    [McpServerTool(Destructive = false, ReadOnly = false, Idempotent = true), Description(
         "Create a new directory. Creates parent directories recursively if they don't exist.")]
     public static Task<string> CreateDirectory(
         IPathValidator validator,
@@ -56,7 +57,7 @@ public static class DirectoryTools
         return Task.FromResult($"Directory created: {path}");
     }
 
-    [McpServerTool, Description(
+    [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "Get a hierarchical tree view of a directory structure. " +
         "Returns an indented text representation with files and subdirectories.")]
     public static Task<string> DirectoryTree(
@@ -78,6 +79,9 @@ public static class DirectoryTools
         return Task.FromResult(sb.ToString().TrimEnd());
     }
 
+    /// <summary>
+    /// Recursively builds an indented tree representation of the directory structure.
+    /// </summary>
     private static void BuildTree(string dirPath, StringBuilder sb, string indent, int maxDepth, int currentDepth)
     {
         if (currentDepth >= maxDepth)
@@ -114,11 +118,4 @@ public static class DirectoryTools
         }
     }
 
-    private static string FormatSize(long bytes) => bytes switch
-    {
-        < 1024 => $"{bytes} B",
-        < 1024 * 1024 => $"{bytes / 1024.0:F1} KB",
-        < 1024 * 1024 * 1024 => $"{bytes / (1024.0 * 1024):F1} MB",
-        _ => $"{bytes / (1024.0 * 1024 * 1024):F1} GB",
-    };
 }
