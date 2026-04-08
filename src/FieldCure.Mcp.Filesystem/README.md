@@ -74,7 +74,7 @@ All paths are validated through a sandbox before any filesystem operation:
 
 ## See Also
 
-Part of the [AssistStudio ecosystem](https://github.com/fieldcure/fieldcure-assiststudio#ecosystem).
+Part of the [AssistStudio ecosystem](https://github.com/fieldcure/fieldcure-assiststudio#packages).
 ## Links
 
 - [GitHub](https://github.com/fieldcure/fieldcure-mcp-filesystem)
