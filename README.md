@@ -190,6 +190,11 @@ dotnet pack src/FieldCure.Mcp.Filesystem -c Release
 | MCP roots protocol | HTTP transport (stdio only) |
 | Document text extraction (DOCX, HWPX, XLSX, PPTX via DocumentParsers) | OCR for scanned documents |
 
+> **Why no PDF?** PDF files are handled by AssistStudio's `PdfCapability` which routes them
+> as page images to the model's vision API. For text-based PDF indexing,
+> see [Mcp.Rag](https://github.com/fieldcure/fieldcure-mcp-rag) which uses
+> `DocumentParsers.Pdf` + `DocumentParsers.Pdf.Ocr`.
+
 ## See Also
 
 Part of the [AssistStudio ecosystem](https://github.com/fieldcure/fieldcure-assiststudio#packages).
