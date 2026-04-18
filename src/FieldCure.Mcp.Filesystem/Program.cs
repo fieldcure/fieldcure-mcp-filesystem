@@ -50,9 +50,7 @@ builder.Services
             Name = "fieldcure-mcp-filesystem",
             Title = "FieldCure Filesystem",
             Description = "Sandboxed file/directory operations with built-in document parsing",
-            Version = typeof(Program).Assembly
-                .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()
-                ?.InformationalVersion ?? "0.0.0",
+            Version = GetPublicVersion(),
         };
     })
     .WithStdioServerTransport()
@@ -81,3 +79,20 @@ server.RegisterNotificationHandler(
 
 await app.RunAsync();
 return 0;
+
+/// <summary>
+/// Returns the user-facing server version. Strips the SemVer 2.0 build-metadata
+/// suffix (<c>+&lt;commit-sha&gt;</c>) that the .NET SDK auto-appends to
+/// <see cref="AssemblyInformationalVersionAttribute"/>; that hash is only useful
+/// to developers and just adds noise in client UIs. The assembly attribute
+/// itself still carries the full string for diagnostic logs and debuggers.
+/// </summary>
+static string GetPublicVersion()
+{
+    var info = typeof(Program).Assembly
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+        ?.InformationalVersion;
+    if (string.IsNullOrEmpty(info)) return "0.0.0";
+    var plus = info.IndexOf('+');
+    return plus > 0 ? info[..plus] : info;
+}
