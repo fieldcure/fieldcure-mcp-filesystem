@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Text;
 using System.Text.RegularExpressions;
 using FieldCure.DocumentParsers;
@@ -30,14 +30,9 @@ public static class FileOperationTools
         if (!File.Exists(resolvedPath))
             throw new FileNotFoundException($"File not found: {path}");
 
-        // Use DocumentParsers for supported document formats (hwpx, docx, etc.)
-        var ext = Path.GetExtension(resolvedPath);
-        var parser = DocumentParserFactory.GetParser(ext);
-        if (parser is not null)
-        {
-            var bytes = await File.ReadAllBytesAsync(resolvedPath, cancellationToken);
-            return parser.ExtractText(bytes);
-        }
+        var parsed = await TryExtractDocumentTextAsync(resolvedPath, cancellationToken);
+        if (parsed is not null)
+            return parsed;
 
         if (await EncodingDetector.IsBinaryAsync(resolvedPath, cancellationToken))
         {
@@ -94,19 +89,7 @@ public static class FileOperationTools
         if (!string.IsNullOrEmpty(dir))
             Directory.CreateDirectory(dir);
 
-        // Atomic write: write to temp file, then rename
-        var tempPath = $"{resolvedPath}.{Guid.NewGuid():N}.tmp";
-        try
-        {
-            await File.WriteAllTextAsync(tempPath, content, Encoding.UTF8, cancellationToken);
-            File.Move(tempPath, resolvedPath, overwrite: true);
-        }
-        catch
-        {
-            // Clean up temp file on failure
-            try { File.Delete(tempPath); } catch { /* best effort */ }
-            throw;
-        }
+        await WriteTextAtomicallyAsync(resolvedPath, content, cancellationToken);
 
         return $"Successfully wrote {content.Length} characters to {path}";
     }
@@ -378,6 +361,145 @@ public static class FileOperationTools
         return sb.ToString();
     }
 
+    [McpServerTool(ReadOnly = false, Destructive = false, Idempotent = true), Description(
+        "RECOMMENDED for converting a supported document file to markdown for LLM processing. " +
+        "Supports DocumentParsers formats such as DOCX, HWPX, XLSX, PPTX, and PDF. " +
+        "Writes the converted markdown directly to disk to avoid sending the full content through MCP context.")]
+    public static async Task<string> ConvertToMarkdown(
+        IPathValidator validator,
+        [Description("Source document path")]
+        string path,
+        [Description("Optional output markdown path. Defaults to the same filename with a .md extension.")]
+        string? output_path = null,
+        CancellationToken cancellationToken = default)
+    {
+        var resolvedPath = validator.ValidateAndResolve(path);
+
+        if (!File.Exists(resolvedPath))
+            throw new FileNotFoundException($"File not found: {path}");
+
+        var markdown = await TryExtractDocumentTextAsync(resolvedPath, cancellationToken);
+        if (markdown is null)
+            throw new InvalidOperationException(
+                $"Unsupported document format: {Path.GetExtension(resolvedPath)}. " +
+                "Supported formats are those recognized by DocumentParsers.");
+
+        var resolvedOutputPath = ResolveMarkdownOutputPath(validator, resolvedPath, output_path);
+        var outputDirectory = Path.GetDirectoryName(resolvedOutputPath);
+        if (!string.IsNullOrEmpty(outputDirectory))
+            Directory.CreateDirectory(outputDirectory);
+
+        await WriteTextAtomicallyAsync(resolvedOutputPath, markdown, cancellationToken);
+
+        var inputSize = new FileInfo(resolvedPath).Length;
+        var outputSize = new FileInfo(resolvedOutputPath).Length;
+
+        return
+            $"Converted to markdown\n" +
+            $"Source: {resolvedPath}\n" +
+            $"Output: {resolvedOutputPath}\n" +
+            $"Input Size: {inputSize} bytes ({FileSize.Format(inputSize)})\n" +
+            $"Output Size: {outputSize} bytes ({FileSize.Format(outputSize)})";
+    }
+
+    [McpServerTool(ReadOnly = false, Destructive = false, Idempotent = true), Description(
+        "RECOMMENDED for batch-converting supported document files in a directory to markdown for LLM processing. " +
+        "Converts each file directly on disk and reports per-file success or failure without stopping the batch.")]
+    public static async Task<string> ConvertDirectoryToMarkdown(
+        IPathValidator validator,
+        [Description("Source directory path")]
+        string directory_path,
+        [Description("Optional output directory. Defaults to the source directory.")]
+        string? output_directory = null,
+        [Description("Glob pattern to filter file names. Defaults to '*' and still only converts supported document formats.")]
+        string pattern = "*",
+        [Description("Whether to include subdirectories. Defaults to false.")]
+        bool recursive = false,
+        CancellationToken cancellationToken = default)
+    {
+        var resolvedDirectory = validator.ValidateAndResolve(directory_path);
+        if (!Directory.Exists(resolvedDirectory))
+            throw new DirectoryNotFoundException($"Directory not found: {directory_path}");
+
+        var resolvedOutputDirectory = output_directory is null
+            ? resolvedDirectory
+            : validator.ValidateAndResolve(output_directory);
+
+        Directory.CreateDirectory(resolvedOutputDirectory);
+
+        var matches = Directory.EnumerateFiles(
+            resolvedDirectory,
+            pattern,
+            new EnumerationOptions
+            {
+                RecurseSubdirectories = recursive,
+                IgnoreInaccessible = true,
+                MatchCasing = MatchCasing.CaseInsensitive,
+            });
+
+        var results = new List<string>();
+        var successCount = 0;
+        var failureCount = 0;
+        var skippedCount = 0;
+
+        foreach (var match in matches)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            string resolvedInput;
+            try
+            {
+                resolvedInput = validator.ValidateAndResolve(match);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                failureCount++;
+                results.Add($"ERROR | {match} | Access denied by sandbox");
+                continue;
+            }
+
+            if (await TryExtractDocumentTextAsync(resolvedInput, cancellationToken) is not { } markdown)
+            {
+                skippedCount++;
+                continue;
+            }
+
+            var relativePath = Path.GetRelativePath(resolvedDirectory, resolvedInput);
+
+            try
+            {
+                var outputPath = Path.ChangeExtension(Path.Combine(resolvedOutputDirectory, relativePath), ".md");
+                var resolvedOutput = validator.ValidateAndResolve(outputPath);
+                var outputDir = Path.GetDirectoryName(resolvedOutput);
+                if (!string.IsNullOrEmpty(outputDir))
+                    Directory.CreateDirectory(outputDir);
+
+                await WriteTextAtomicallyAsync(resolvedOutput, markdown, cancellationToken);
+                successCount++;
+                results.Add($"OK    | {relativePath} -> {Path.GetRelativePath(resolvedDirectory, resolvedOutput)}");
+            }
+            catch (Exception ex)
+            {
+                failureCount++;
+                results.Add($"ERROR | {relativePath} | {ex.Message}");
+            }
+        }
+
+        var summary = new StringBuilder();
+        summary.AppendLine($"Converted {successCount} file(s) to markdown.");
+        summary.AppendLine($"Failed: {failureCount}");
+        summary.AppendLine($"Skipped unsupported: {skippedCount}");
+
+        if (results.Count > 0)
+        {
+            summary.AppendLine();
+            foreach (var line in results)
+                summary.AppendLine(line);
+        }
+
+        return summary.ToString().TrimEnd();
+    }
+
     /// <summary>
     /// Counts the number of non-overlapping occurrences of <paramref name="pattern"/> in <paramref name="text"/>.
     /// </summary>
@@ -410,6 +532,43 @@ public static class FileOperationTools
         {
             var destSubDir = Path.Combine(destDir, Path.GetFileName(dir));
             CopyDirectoryRecursive(dir, destSubDir);
+        }
+    }
+
+    private static async Task<string?> TryExtractDocumentTextAsync(string resolvedPath, CancellationToken cancellationToken)
+    {
+        var parser = DocumentParserFactory.GetParser(Path.GetExtension(resolvedPath));
+        if (parser is null)
+            return null;
+
+        var bytes = await File.ReadAllBytesAsync(resolvedPath, cancellationToken);
+        return parser.ExtractText(bytes);
+    }
+
+    private static string ResolveMarkdownOutputPath(
+        IPathValidator validator,
+        string resolvedInputPath,
+        string? requestedOutputPath)
+    {
+        var candidate = string.IsNullOrWhiteSpace(requestedOutputPath)
+            ? Path.ChangeExtension(resolvedInputPath, ".md")
+            : requestedOutputPath;
+
+        return validator.ValidateAndResolve(candidate);
+    }
+
+    private static async Task WriteTextAtomicallyAsync(string resolvedPath, string content, CancellationToken cancellationToken)
+    {
+        var tempPath = $"{resolvedPath}.{Guid.NewGuid():N}.tmp";
+        try
+        {
+            await File.WriteAllTextAsync(tempPath, content, Encoding.UTF8, cancellationToken);
+            File.Move(tempPath, resolvedPath, overwrite: true);
+        }
+        catch
+        {
+            try { File.Delete(tempPath); } catch { /* best effort */ }
+            throw;
         }
     }
 }

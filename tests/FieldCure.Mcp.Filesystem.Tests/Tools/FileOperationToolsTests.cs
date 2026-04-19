@@ -1,4 +1,4 @@
-using FieldCure.Mcp.Filesystem.Security;
+﻿using FieldCure.Mcp.Filesystem.Security;
 using FieldCure.Mcp.Filesystem.Tools;
 
 namespace FieldCure.Mcp.Filesystem.Tests.Tools;
@@ -207,5 +207,38 @@ public class FileOperationToolsTests
     {
         await Assert.ThrowsExactlyAsync<FileNotFoundException>(() =>
             FileOperationTools.ReadFileLines(_validator, Path.Combine(_testRoot, "nope.txt"), startLine: 1));
+    }
+
+    // --- ConvertToMarkdown tests ---
+
+    [TestMethod]
+    public async Task ConvertToMarkdown_TextFile_Unsupported_Throws()
+    {
+        var filePath = Path.Combine(_testRoot, "plain.txt");
+        File.WriteAllText(filePath, "hello");
+
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
+            FileOperationTools.ConvertToMarkdown(_validator, filePath));
+    }
+
+    [TestMethod]
+    public async Task ConvertDirectoryToMarkdown_UnsupportedFiles_AreSkipped()
+    {
+        File.WriteAllText(Path.Combine(_testRoot, "a.txt"), "a");
+        File.WriteAllText(Path.Combine(_testRoot, "b.md"), "# b");
+
+        var result = await FileOperationTools.ConvertDirectoryToMarkdown(_validator, _testRoot);
+
+        StringAssert.Contains(result, "Converted 0 file(s)");
+        StringAssert.Contains(result, "Skipped unsupported: 2");
+    }
+
+    [TestMethod]
+    public async Task ConvertDirectoryToMarkdown_MissingDirectory_Throws()
+    {
+        var missing = Path.Combine(_testRoot, "missing");
+
+        await Assert.ThrowsExactlyAsync<DirectoryNotFoundException>(() =>
+            FileOperationTools.ConvertDirectoryToMarkdown(_validator, missing));
     }
 }

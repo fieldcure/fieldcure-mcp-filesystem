@@ -1,9 +1,10 @@
-using System.Reflection;
-using FieldCure.Mcp.Filesystem.Security;
+﻿using FieldCure.Mcp.Filesystem.Security;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Protocol;
+using System.Reflection;
+
 if (args.Length == 0)
 {
     Console.Error.WriteLine("Usage: fieldcure-mcp-filesystem <allowed-directory> [additional-directories...]");

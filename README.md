@@ -1,4 +1,4 @@
-# FieldCure MCP Filesystem Server
+﻿# FieldCure MCP Filesystem Server
 
 [![NuGet](https://img.shields.io/nuget/v/FieldCure.Mcp.Filesystem)](https://www.nuget.org/packages/FieldCure.Mcp.Filesystem)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/fieldcure/fieldcure-mcp-filesystem/blob/main/LICENSE)
@@ -7,23 +7,22 @@ A secure [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server 
 
 ## Features
 
-- **15 filesystem tools** — read, write, append, delete, search, copy, move, and more
-- **Sandboxed access** — all operations restricted to explicitly allowed directories
-- **MCP roots protocol** — clients can change allowed directories at runtime without restarting the server
-- **Security hardened** — path traversal prevention, symlink resolution, NTFS ADS blocking, Windows reserved name rejection
-- **Atomic writes** — temp-file-then-rename pattern prevents data corruption
-- **Binary detection** — automatically returns base64 for binary files, UTF-8 for text
-- **Stdio transport** — standard MCP subprocess model via JSON-RPC over stdin/stdout
+- **17 filesystem tools**: read, write, append, delete, search, copy, move, convert-to-markdown, and more
+- **Sandboxed access**: all operations restricted to explicitly allowed directories
+- **MCP roots protocol**: clients can change allowed directories at runtime without restarting the server
+- **Security hardened**: path traversal prevention, symlink resolution, NTFS ADS blocking, Windows reserved name rejection
+- **Atomic writes**: temp-file-then-rename pattern prevents data corruption
+- **Binary detection**: automatically returns base64 for binary files, UTF-8 for text
+- **Built-in document parsing**: supported document formats can be read directly and converted to markdown on disk
+- **Stdio transport**: standard MCP subprocess model via JSON-RPC over stdin/stdout
 
 ## Installation
 
-### dotnet tool (recommended)
+### dotnet tool
 
 ```bash
 dotnet tool install -g FieldCure.Mcp.Filesystem
 ```
-
-After installation, the `fieldcure-mcp-filesystem` command is available globally.
 
 ### From source
 
@@ -41,8 +40,6 @@ dotnet build
 
 ### Claude Desktop
 
-Add to `claude_desktop_config.json`:
-
 ```json
 {
   "mcpServers": {
@@ -57,9 +54,7 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
-### VS Code (Copilot)
-
-Add to `.vscode/mcp.json`:
+### VS Code
 
 ```json
 {
@@ -74,24 +69,6 @@ Add to `.vscode/mcp.json`:
 }
 ```
 
-### From source (without dotnet tool)
-
-```json
-{
-  "mcpServers": {
-    "filesystem": {
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project", "C:\\path\\to\\fieldcure-mcp-filesystem\\src\\FieldCure.Mcp.Filesystem",
-        "--",
-        "C:\\Users\\me\\Documents"
-      ]
-    }
-  }
-}
-```
-
 ## Tools
 
 ### File Operations
@@ -100,79 +77,77 @@ Add to `.vscode/mcp.json`:
 |------|-------------|
 | `read_file` | Read file contents (text as UTF-8, binary as base64) |
 | `read_multiple_files` | Read multiple files at once with per-file error handling |
-| `read_file_lines` | Read a specific range of lines (1-based, useful for large files) |
+| `read_file_lines` | Read a specific range of lines |
+| `convert_to_markdown` | Convert one supported document file into a markdown file on disk |
+| `convert_directory_to_markdown` | Batch-convert supported document files in a directory to markdown files |
 | `write_file` | Create or overwrite a file with atomic write |
 | `append_file` | Append content to end of file with auto-newline |
 | `modify_file` | Find and replace text (plain text or regex) |
 | `copy_file` | Copy a file or directory recursively |
 | `move_file` | Move or rename a file or directory |
-| `delete_file` | Delete a file or directory (with recursive safety guard) |
+| `delete_file` | Delete a file or directory |
 
 ### Directory Operations
 
 | Tool | Description |
 |------|-------------|
 | `list_directory` | List contents with type markers, sizes, and dates |
-| `create_directory` | Create a directory (recursive) |
+| `create_directory` | Create a directory recursively |
 | `directory_tree` | Hierarchical tree view with configurable depth |
 
 ### Search & Info
 
 | Tool | Description |
 |------|-------------|
-| `search_files` | Find files by glob pattern (e.g., `*.cs`, `readme*`) |
+| `search_files` | Find files by glob pattern |
 | `search_within_files` | Search text content across files with line numbers |
-| `get_file_info` | File/directory metadata (size, dates, attributes) |
+| `get_file_info` | File or directory metadata |
 
 ## MCP Roots Protocol
 
-The server supports the [MCP roots protocol](https://modelcontextprotocol.info/specification/draft/client/roots/) for runtime directory changes. When a client sends a `notifications/roots/list_changed` notification:
+The server supports the MCP roots protocol for runtime directory changes. When the client changes roots:
 
-1. Server calls `roots/list` to get the new directory list from the client
-2. Allowed directories are **replaced entirely** (override, not merge)
-3. CLI args serve as the initial value; roots override them once received
-4. Empty roots list = all file access denied
-
-This enables multi-tab clients to switch project folders without restarting the server process.
+1. The server requests the updated roots list.
+2. Allowed directories are replaced entirely.
+3. CLI args provide the initial sandbox.
+4. An empty roots list means all file access is denied.
 
 ## Security Model
 
 All paths are validated through `IPathValidator` before any filesystem operation:
 
-1. **Allowed directories** — CLI args define the initial sandbox boundary (overridable via roots)
-2. **Path normalization** — `.` and `..` resolved via `Path.GetFullPath()`
-3. **Symlink resolution** — final target must be within allowed directories
-4. **Directory-separator-aware prefix matching** — prevents `/allowed` from matching `/allowed-secret`
-5. **NTFS ADS blocking** — alternate data stream paths rejected
-6. **Windows reserved names** — `CON`, `PRN`, `AUX`, `NUL`, etc. rejected
-7. **Thread-safe directory updates** — `ReaderWriterLockSlim` protects concurrent access during roots changes
+1. Allowed directories define the sandbox boundary.
+2. `.` and `..` are normalized via `Path.GetFullPath()`.
+3. Symlinks must resolve within allowed directories.
+4. Prefix matching is directory-separator-aware.
+5. NTFS alternate data streams are blocked.
+6. Windows reserved names are rejected.
+7. Allowed directory updates are thread-safe.
+
+The markdown conversion tools validate both source and output paths through the same sandbox rules. They write converted markdown directly to disk instead of returning full document text through MCP, which is usually more token-efficient than `read_file` plus `write_file`.
 
 ## Project Structure
 
-```
+```text
 src/FieldCure.Mcp.Filesystem/
-├── Program.cs                  # Entry point, DI setup, stdio transport
-├── Security/
-│   ├── IPathValidator.cs       # Path validation interface
-│   └── PathValidator.cs        # Sandbox implementation
-├── Tools/
-│   ├── FileOperationTools.cs   # 9 file tools
-│   ├── DirectoryTools.cs       # 3 directory tools
-│   └── SearchTools.cs          # 3 search/info tools
-└── Utilities/
-    └── EncodingDetector.cs     # Text/binary detection
+|- Program.cs
+|- Security/
+|  |- IPathValidator.cs
+|  \- PathValidator.cs
+|- Tools/
+|  |- FileOperationTools.cs
+|  |- DirectoryTools.cs
+|  \- SearchTools.cs
+\- Utilities/
+   |- EncodingDetector.cs
+   \- FileSize.cs
 ```
 
 ## Development
 
 ```bash
-# Build
 dotnet build
-
-# Test
 dotnet test
-
-# Pack as dotnet tool
 dotnet pack src/FieldCure.Mcp.Filesystem -c Release
 ```
 
@@ -182,18 +157,12 @@ dotnet pack src/FieldCure.Mcp.Filesystem -c Release
 |-----------|-------------------|
 | Text file read/write (UTF-8) | Non-UTF-8 encoding auto-detection |
 | Binary file detection + base64 | Streaming for very large files (>100 MB) |
-| Atomic writes (temp + rename) | File watching / change notifications |
+| Atomic writes | File watching / change notifications |
 | Glob pattern search | Full-text indexing |
 | Regex find-and-replace | Multi-file transactional writes |
 | Symlink resolution | Cross-platform symlink creation |
-| NTFS ADS blocking | Linux extended attributes |
-| MCP roots protocol | HTTP transport (stdio only) |
-| Document text extraction (DOCX, HWPX, XLSX, PPTX via DocumentParsers) | OCR for scanned documents |
-
-> **Why no PDF?** PDF files are handled by AssistStudio's `PdfCapability` which routes them
-> as page images to the model's vision API. For text-based PDF indexing,
-> see [Mcp.Rag](https://github.com/fieldcure/fieldcure-mcp-rag) which uses
-> `DocumentParsers.Pdf` + `DocumentParsers.Pdf.Ocr`.
+| MCP roots protocol | HTTP transport |
+| Document text extraction / markdown conversion for formats supported by DocumentParsers | OCR for scanned documents |
 
 ## See Also
 

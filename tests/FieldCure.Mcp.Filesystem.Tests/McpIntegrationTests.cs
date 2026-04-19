@@ -1,4 +1,4 @@
-using ModelContextProtocol.Client;
+﻿using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 
 namespace FieldCure.Mcp.Filesystem.Tests;
@@ -46,10 +46,12 @@ public class McpIntegrationTests
     }
 
     [TestMethod]
-    public async Task ListTools_ReturnsAll15Tools()
+    public async Task ListTools_ReturnsAll17Tools()
     {
         var tools = await _client.ListToolsAsync();
-        Assert.AreEqual(15, tools.Count);
+        Assert.AreEqual(17, tools.Count);
+        Assert.IsTrue(tools.Any(t => t.Name == "convert_to_markdown"));
+        Assert.IsTrue(tools.Any(t => t.Name == "convert_directory_to_markdown"));
     }
 
     [TestMethod]
