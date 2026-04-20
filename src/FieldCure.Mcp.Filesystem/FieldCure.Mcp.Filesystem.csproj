@@ -8,14 +8,15 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <PackageId>FieldCure.Mcp.Filesystem</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
     <Company>Fieldcure Co., Ltd.</Company>
     <Copyright>Copyright (c) 2026 Fieldcure Co., Ltd.</Copyright>
-    <Description>MCP server for secure filesystem operations. Exposes 15 sandboxed file/directory tools via stdio transport. Supports MCP roots protocol for runtime directory changes.</Description>
+    <Description>MCP server for secure filesystem operations. Exposes 17 sandboxed file/directory tools via stdio transport. Supports MCP roots protocol for runtime directory changes, plus convert_to_markdown for on-disk document-to-markdown conversion.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReleaseNotes>v1.1.0: New convert_to_markdown and convert_directory_to_markdown tools — parse DOCX, HWPX, XLSX, PPTX, or PDF documents directly to markdown on disk without round-tripping through the LLM context. FieldCure.DocumentParsers upgraded to 2.x (PDF text extraction is now part of the core package; OCR is not bundled — use fieldcure-mcp-rag for scanned PDFs).</PackageReleaseNotes>
     <PackageProjectUrl>https://github.com/fieldcure/fieldcure-mcp-filesystem</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fieldcure/fieldcure-mcp-filesystem</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -31,7 +32,7 @@
   <ItemGroup>
     <PackageReference Include="ModelContextProtocol" Version="1.2.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.*" />
-    <PackageReference Include="FieldCure.DocumentParsers" Version="1.*" />
+    <PackageReference Include="FieldCure.DocumentParsers" Version="2.*" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,5 +1,18 @@
 ﻿# Release Notes
 
+## v1.1.0 (2026-04-20)
+
+### Added
+
+- **`convert_to_markdown`** — convert a single supported document file (DOCX, HWPX, XLSX, PPTX, PDF) to markdown on disk. Skips the LLM context entirely, saving tokens compared to `read_file` + `write_file`.
+- **`convert_directory_to_markdown`** — batch variant. Individual file failures are reported per-file and do not abort the batch.
+
+### Changed
+
+- **`FieldCure.DocumentParsers` 1.x → 2.x** — PDF text extraction is now part of the core package (no separate `DocumentParsers.Pdf` reference needed). No behaviour change for existing `read_file` users. OCR is not included; scanned PDFs without a text layer yield empty text — use a dedicated OCR pipeline for those (e.g. `fieldcure-mcp-rag` which bundles it on Windows).
+
+---
+
 ## v1.0.0 (2026-04-06)
 
 ### Stable Release
