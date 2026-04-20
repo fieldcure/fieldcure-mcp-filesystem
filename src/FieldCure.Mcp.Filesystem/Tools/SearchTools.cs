@@ -12,6 +12,16 @@ namespace FieldCure.Mcp.Filesystem.Tools;
 [McpServerToolType]
 public static class SearchTools
 {
+    /// <summary>
+    /// Recursively searches for files whose names match the given glob pattern
+    /// under the specified base directory. Each hit is re-validated through
+    /// the sandbox so symlinks pointing outside allowed directories are skipped.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="path">Base directory to search from.</param>
+    /// <param name="pattern">Glob pattern matched against file names (case-insensitive).</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Newline-delimited relative paths, or a "no match" placeholder.</returns>
     [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "Search for files by name pattern within a directory tree. " +
         "Supports glob patterns like '*.cs', '*.txt', 'Program.*'. " +
@@ -57,6 +67,18 @@ public static class SearchTools
             : "No matching files found.");
     }
 
+    /// <summary>
+    /// Searches for a text substring within files under the given base directory.
+    /// Binary files are skipped automatically; matches are returned with the
+    /// relative path and 1-based line number prefix.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="path">Base directory to search from.</param>
+    /// <param name="substring">Case-insensitive substring to search for.</param>
+    /// <param name="depth">Maximum recursion depth.</param>
+    /// <param name="maxResults">Maximum number of matching lines to return.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Newline-delimited match lines, optionally with a truncation notice.</returns>
     [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "Search for text content within files in a directory. " +
         "Returns matching lines with file paths and line numbers. " +
@@ -130,6 +152,14 @@ public static class SearchTools
         return sb.Length > 0 ? sb.ToString().TrimEnd() : "No matches found.";
     }
 
+    /// <summary>
+    /// Returns a human-readable metadata summary for a file or directory,
+    /// including size, timestamps, attributes, and type-specific detail.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="path">Path of the file or directory to inspect.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A multi-line metadata report.</returns>
     [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "Get detailed metadata about a file or directory. " +
         "Returns size, creation date, modification date, attributes, and more.")]

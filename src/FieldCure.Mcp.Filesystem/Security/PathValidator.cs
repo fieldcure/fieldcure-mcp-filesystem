@@ -22,12 +22,18 @@ public sealed partial class PathValidator : IPathValidator
     private readonly ReaderWriterLockSlim _lock = new();
     private List<string> _allowedDirectories;
 
+    /// <summary>
+    /// Initializes a new <see cref="PathValidator"/> with an initial set of
+    /// allowed directories. Each directory is normalized to an absolute path.
+    /// </summary>
+    /// <param name="allowedDirectories">The initial sandbox directories.</param>
     public PathValidator(IEnumerable<string> allowedDirectories)
     {
         _allowedDirectories = [.. allowedDirectories
             .Select(d => NormalizePath(Path.GetFullPath(d)))];
     }
 
+    /// <inheritdoc />
     public IReadOnlyList<string> AllowedDirectories
     {
         get
@@ -62,6 +68,7 @@ public sealed partial class PathValidator : IPathValidator
         }
     }
 
+    /// <inheritdoc />
     public string ValidateAndResolve(string path)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);

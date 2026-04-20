@@ -15,6 +15,15 @@ namespace FieldCure.Mcp.Filesystem.Tools;
 [McpServerToolType]
 public static class FileOperationTools
 {
+    /// <summary>
+    /// Reads a file's complete contents. Supported document formats are parsed
+    /// into text; binary files are returned as base64; plain text is returned
+    /// as UTF-8.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="path">Path of the file to read.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Extracted text, base64 for binary files, or decoded UTF-8 for text.</returns>
     [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "Read the complete contents of a file. " +
         "Returns text content directly for text files, or base64-encoded string for binary files. " +
@@ -43,6 +52,15 @@ public static class FileOperationTools
         return await File.ReadAllTextAsync(resolvedPath, Encoding.UTF8, cancellationToken);
     }
 
+    /// <summary>
+    /// Reads multiple files in parallel, concatenating results with a header
+    /// per file. Individual read failures are reported inline and do not abort
+    /// the overall operation.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="paths">File paths to read.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Concatenated per-file content blocks separated by headers.</returns>
     [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "Read multiple files simultaneously. " +
         "Returns the contents of each file with a header separator. " +
@@ -70,6 +88,16 @@ public static class FileOperationTools
         return string.Join("\n\n", results);
     }
 
+    /// <summary>
+    /// Creates or overwrites a file with the given text content using an
+    /// atomic temp-file-then-rename write. Missing parent directories are
+    /// created automatically.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="path">Destination file path.</param>
+    /// <param name="content">Text content to write (UTF-8).</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A message describing the number of characters written.</returns>
     [McpServerTool(Destructive = true, ReadOnly = false, Idempotent = true), Description(
         "Create a new file or overwrite an existing file with the given content. " +
         "Parent directories are created automatically if they don't exist. " +
@@ -94,6 +122,19 @@ public static class FileOperationTools
         return $"Successfully wrote {content.Length} characters to {path}";
     }
 
+    /// <summary>
+    /// Performs find-and-replace on a file's contents using either plain-text
+    /// or regular-expression matching. Writes are atomic and the original file
+    /// is left untouched if no replacements occur.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="path">Path of the file to modify.</param>
+    /// <param name="find">Text or regex pattern to search for.</param>
+    /// <param name="replace">Replacement text.</param>
+    /// <param name="allOccurrences">Whether to replace every match instead of just the first.</param>
+    /// <param name="regex">Whether <paramref name="find"/> is a regular expression.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A message describing how many replacements were made.</returns>
     [McpServerTool(Destructive = true, ReadOnly = false, Idempotent = true), Description(
         "Search and replace text within a file. " +
         "Supports plain text and regular expression patterns. " +
@@ -172,6 +213,15 @@ public static class FileOperationTools
         return $"Made {count} replacement(s) in {path}";
     }
 
+    /// <summary>
+    /// Copies a file or entire directory subtree to a new location within the
+    /// sandbox. Missing destination parent directories are created automatically.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="source">Source file or directory path.</param>
+    /// <param name="destination">Destination path.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A message describing the copy outcome.</returns>
     [McpServerTool(Destructive = false, ReadOnly = false, Idempotent = true), Description(
         "Copy a file or directory to a new location. " +
         "For directories, copies recursively including all contents.")]
@@ -203,6 +253,15 @@ public static class FileOperationTools
         return Task.FromResult($"File copied: {source} → {destination}");
     }
 
+    /// <summary>
+    /// Moves or renames a file or directory within the sandbox. Both source
+    /// and destination paths are validated before the operation.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="source">Current path.</param>
+    /// <param name="destination">New path.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A message describing the move outcome.</returns>
     [McpServerTool(Destructive = true, ReadOnly = false, Idempotent = false), Description(
         "Move or rename a file or directory. " +
         "Both source and destination must be within allowed directories.")]
@@ -234,6 +293,16 @@ public static class FileOperationTools
         return Task.FromResult($"File moved: {source} → {destination}");
     }
 
+    /// <summary>
+    /// Deletes a file or directory. Non-empty directories require the
+    /// <paramref name="recursive"/> flag; non-existent paths raise
+    /// <see cref="FileNotFoundException"/>.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="path">Path to delete.</param>
+    /// <param name="recursive">Whether to recurse into non-empty directories.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A message describing what was deleted.</returns>
     [McpServerTool(Destructive = true, ReadOnly = false, Idempotent = true), Description(
         "Delete a file or directory. " +
         "For non-empty directories, set recursive to true. " +
@@ -266,6 +335,17 @@ public static class FileOperationTools
         return Task.FromResult($"Deleted file: {path}");
     }
 
+    /// <summary>
+    /// Appends text to the end of a file, creating it if necessary. When
+    /// <paramref name="newline"/> is true, a leading newline is inserted if
+    /// the existing content does not already end with one.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="path">File path to append to.</param>
+    /// <param name="content">Text content to append.</param>
+    /// <param name="newline">Whether to ensure a newline separates existing and appended content.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A message describing the number of characters appended.</returns>
     [McpServerTool(Destructive = false, ReadOnly = false, Idempotent = false), Description(
         "Append content to the end of a file. " +
         "Creates the file if it doesn't exist. " +
@@ -300,6 +380,16 @@ public static class FileOperationTools
         return $"Appended {content.Length} characters to {path}";
     }
 
+    /// <summary>
+    /// Reads a specific 1-based inclusive range of lines from a text file.
+    /// Binary files are rejected and the output is capped at 10,000 lines.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="path">Text file path.</param>
+    /// <param name="startLine">First line to read (1-based, inclusive).</param>
+    /// <param name="endLine">Last line to read (inclusive); 0 means read to end.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A formatted listing with line numbers, total line count, and a truncation notice when applicable.</returns>
     [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "Read a specific range of lines from a text file. " +
         "Uses 1-based line numbering. Returns the requested lines with total line count. " +
@@ -361,6 +451,18 @@ public static class FileOperationTools
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Parses a supported document file (DOCX, HWPX, XLSX, PPTX, PDF, etc.)
+    /// into markdown and writes the result to disk atomically. The markdown
+    /// text is not echoed back through MCP — only a summary with sizes — so
+    /// this is far more token-efficient than <c>read_file</c> plus
+    /// <c>write_file</c>.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="path">Source document path.</param>
+    /// <param name="output_path">Optional markdown output path; defaults to the source filename with a .md extension.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A summary describing the source, destination, and size of the generated markdown.</returns>
     [McpServerTool(ReadOnly = false, Destructive = false, Idempotent = true), Description(
         "RECOMMENDED for converting a supported document file to markdown for LLM processing. " +
         "Supports DocumentParsers formats such as DOCX, HWPX, XLSX, PPTX, and PDF. " +
@@ -402,6 +504,19 @@ public static class FileOperationTools
             $"Output Size: {outputSize} bytes ({FileSize.Format(outputSize)})";
     }
 
+    /// <summary>
+    /// Batch variant of <see cref="ConvertToMarkdown"/>. Iterates files matching
+    /// <paramref name="pattern"/> under the source directory, converts each to
+    /// markdown, and reports per-file success, failure, or skip for unsupported
+    /// extensions. Individual failures do not abort the batch.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="directory_path">Source directory.</param>
+    /// <param name="output_directory">Optional destination directory; defaults to the source directory.</param>
+    /// <param name="pattern">File-name glob to filter candidates. Unsupported extensions are still skipped.</param>
+    /// <param name="recursive">Whether to include subdirectories.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A summary with success / failure / skip counts and a per-file outcome list.</returns>
     [McpServerTool(ReadOnly = false, Destructive = false, Idempotent = true), Description(
         "RECOMMENDED for batch-converting supported document files in a directory to markdown for LLM processing. " +
         "Converts each file directly on disk and reports per-file success or failure without stopping the batch.")]
@@ -535,6 +650,14 @@ public static class FileOperationTools
         }
     }
 
+    /// <summary>
+    /// Attempts to extract text from a file using a matching DocumentParsers
+    /// parser. Returns <see langword="null"/> when no parser is registered for
+    /// the file's extension.
+    /// </summary>
+    /// <param name="resolvedPath">Validated file path.</param>
+    /// <param name="cancellationToken">Cancellation token for the read.</param>
+    /// <returns>Extracted text, or <see langword="null"/> when unsupported.</returns>
     private static async Task<string?> TryExtractDocumentTextAsync(string resolvedPath, CancellationToken cancellationToken)
     {
         var parser = DocumentParserFactory.GetParser(Path.GetExtension(resolvedPath));
@@ -545,6 +668,16 @@ public static class FileOperationTools
         return parser.ExtractText(bytes);
     }
 
+    /// <summary>
+    /// Resolves the markdown output path for a conversion. When the caller
+    /// omits <paramref name="requestedOutputPath"/>, the input filename with
+    /// a <c>.md</c> extension is used. The final path is re-validated through
+    /// the sandbox.
+    /// </summary>
+    /// <param name="validator">Path validator used to enforce the sandbox.</param>
+    /// <param name="resolvedInputPath">Already-validated source path.</param>
+    /// <param name="requestedOutputPath">Optional caller-supplied output path.</param>
+    /// <returns>A validated absolute markdown output path.</returns>
     private static string ResolveMarkdownOutputPath(
         IPathValidator validator,
         string resolvedInputPath,
@@ -557,6 +690,14 @@ public static class FileOperationTools
         return validator.ValidateAndResolve(candidate);
     }
 
+    /// <summary>
+    /// Writes text to <paramref name="resolvedPath"/> atomically by staging it
+    /// in a temp file and then renaming. Best-effort deletes the temp file if
+    /// the rename fails.
+    /// </summary>
+    /// <param name="resolvedPath">Already-validated destination path.</param>
+    /// <param name="content">Text content to write (UTF-8).</param>
+    /// <param name="cancellationToken">Cancellation token for the write.</param>
     private static async Task WriteTextAtomicallyAsync(string resolvedPath, string content, CancellationToken cancellationToken)
     {
         var tempPath = $"{resolvedPath}.{Guid.NewGuid():N}.tmp";

@@ -12,6 +12,14 @@ namespace FieldCure.Mcp.Filesystem.Tools;
 [McpServerToolType]
 public static class DirectoryTools
 {
+    /// <summary>
+    /// Lists the immediate contents of the given directory with type, size,
+    /// and last-modified markers suitable for MCP tool output.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="path">Directory path to list.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A newline-delimited listing, or a placeholder for an empty directory.</returns>
     [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "List the contents of a directory. " +
         "Returns entries with [FILE] or [DIR] markers, size, and last modified date.")]
@@ -44,6 +52,13 @@ public static class DirectoryTools
         return Task.FromResult(sb.Length > 0 ? sb.ToString().TrimEnd() : "(empty directory)");
     }
 
+    /// <summary>
+    /// Creates the specified directory and any missing parent directories.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="path">Directory path to create.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A success message referencing the created directory path.</returns>
     [McpServerTool(Destructive = false, ReadOnly = false, Idempotent = true), Description(
         "Create a new directory. Creates parent directories recursively if they don't exist.")]
     public static Task<string> CreateDirectory(
@@ -57,6 +72,15 @@ public static class DirectoryTools
         return Task.FromResult($"Directory created: {path}");
     }
 
+    /// <summary>
+    /// Builds a hierarchical tree view of the directory structure up to the
+    /// specified depth, using Unicode connectors for readability.
+    /// </summary>
+    /// <param name="validator">Injected path validator that enforces the sandbox.</param>
+    /// <param name="path">Root directory to render.</param>
+    /// <param name="depth">Maximum depth to traverse.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>An indented text representation of the directory tree.</returns>
     [McpServerTool(ReadOnly = true, Destructive = false, Idempotent = true), Description(
         "Get a hierarchical tree view of a directory structure. " +
         "Returns an indented text representation with files and subdirectories.")]
