@@ -1,6 +1,8 @@
-﻿# FieldCure.Mcp.Filesystem
+# FieldCure.Mcp.Filesystem
 
 Secure MCP server for local filesystem operations: read, write, search, copy, move, and convert supported documents to markdown within a sandboxed directory boundary.
+
+<!-- mcp-name: io.github.fieldcure/filesystem -->
 
 ## Install
 
