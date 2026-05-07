@@ -41,4 +41,19 @@
     <None Include=".mcp/server.json" Pack="true" PackagePath=".mcp/" />
   </ItemGroup>
 
+  <!-- Sync check: .mcp/server.json's "version" fields must match csproj <Version>.
+       The JSON descriptor is metadata for the MCP Server Registry; if the two
+       drift, the registry listing reports the wrong version even though the
+       published nupkg itself is correct. Runs before pack and errors out on
+       the literal token `"version": "$(Version)"` so a mismatched dev pack
+       fails immediately with a descriptive message. -->
+  <Target Name="VerifyServerJsonVersion" BeforeTargets="GenerateNuspec">
+    <PropertyGroup>
+      <_ServerJsonContent>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\.mcp\server.json'))</_ServerJsonContent>
+      <_ExpectedVersionToken>"version": "$(Version)"</_ExpectedVersionToken>
+    </PropertyGroup>
+    <Error Condition="!$(_ServerJsonContent.Contains($(_ExpectedVersionToken)))"
+           Text=".mcp/server.json version is out of sync with csproj &lt;Version&gt;$(Version)&lt;/Version&gt;. Update both 'version' fields in .mcp/server.json to match before packing." />
+  </Target>
+
 </Project>
